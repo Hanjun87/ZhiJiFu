@@ -25,7 +25,7 @@ const pageDepth: Record<Page, number> = {
   community_post_detail: 1,
   community_expert: 1,
   community_create: 1,
-  diary: 1,
+
   history: 1,
 };
 
@@ -86,119 +86,80 @@ export function resolveTransition(from: Page, to: Page): NavigationTransition {
 export function getPageTransition(kind: TransitionKind, direction: number, reducedMotion: boolean) {
   if (reducedMotion) {
     return {
-      initial: { opacity: 0, x: direction * 8, scale: 1 },
+      initial: { x: direction * 20 },
       animate: {
-        opacity: 1,
         x: 0,
-        scale: 1,
-        transition: { duration: 0.6, ease: [0.2, 0.8, 0.2, 1] },
+        transition: { duration: 0.2, ease: 'easeOut' },
       },
       exit: {
-        opacity: 0,
-        x: direction * -6,
-        scale: 1,
-        transition: { duration: 0.6, ease: [0.4, 0, 1, 1] },
+        x: direction * -20,
+        transition: { duration: 0.2, ease: 'easeIn' },
       },
     };
   }
 
+  // 底部导航 Tab 切换动画 - 平滑流畅
   const tabTransition = {
-    initial: {
-      opacity: 1,
-      x: direction * 20,
-      scale: 1,
-    },
+    initial: { x: direction * 100 },
     animate: {
-      opacity: 1,
       x: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.2, 0.9, 0.2, 1] },
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
     exit: {
-      opacity: 1,
-      x: direction * -20,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+      x: direction * -100,
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
+  // Home Tab 特殊处理 - 更快更灵敏
   const homeTabTransition = {
-    initial: {
-      opacity: 1,
-      x: direction * 12,
-      scale: 1,
-    },
+    initial: { x: direction * 100 },
     animate: {
-      opacity: 1,
       x: 0,
-      scale: 1,
-      transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
     },
     exit: {
-      opacity: 1,
-      x: direction * -12,
-      scale: 1,
-      transition: { duration: 0.28, ease: [0.4, 0, 0.2, 1] },
+      x: direction * -100,
+      transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
+  // Push 动画 - 从右边划入，返回时向右边划出
   const pushTransition = {
-    initial: {
-      opacity: 0,
-      x: direction * 64,
-      scale: 1,
-    },
+    initial: { x: '100%' },
     animate: {
-      opacity: 1,
       x: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
     exit: {
-      opacity: 0.92,
-      x: direction * -52,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+      x: '100%',
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
+  // 沉浸式页面动画 - 从右边划入，返回时向右边划出
   const immersiveTransition = {
-    initial: {
-      opacity: 0,
-      x: direction > 0 ? 54 : -54,
-      scale: 1,
-    },
+    initial: { x: '100%' },
     animate: {
-      opacity: 1,
       x: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.18, 1, 0.32, 1] },
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
     exit: {
-      opacity: 0.9,
-      x: direction > 0 ? -44 : 44,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+      x: '100%',
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
+  // Sheet 动画 - 从右边划入，返回时向右边划出
   const sheetTransition = {
-    initial: {
-      opacity: 0,
-      x: direction > 0 ? 58 : -58,
-      scale: 1,
-    },
+    initial: { x: '100%' },
     animate: {
-      opacity: 1,
       x: 0,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
     exit: {
-      opacity: 0.9,
-      x: direction > 0 ? -46 : 46,
-      scale: 1,
-      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+      x: '100%',
+      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
@@ -216,18 +177,14 @@ export function getPageTransition(kind: TransitionKind, direction: number, reduc
   }
   if (kind === 'replace') {
     return {
-      initial: { opacity: 0, x: direction * 28, scale: 1 },
+      initial: { x: direction * 20 },
       animate: {
-        opacity: 1,
         x: 0,
-        scale: 1,
-        transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] },
+        transition: { duration: 0.25, ease: 'easeOut' },
       },
       exit: {
-        opacity: 0.92,
-        x: direction * -24,
-        scale: 1,
-        transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+        x: direction * -20,
+        transition: { duration: 0.25, ease: 'easeIn' },
       },
     };
   }

@@ -11,7 +11,7 @@ import Analysis from './pages/Home/Analysis';
 import Result from './pages/Home/Result';
 import RecordsPage from './pages/Records';
 import RecordDetailPage from './pages/Records/RecordDetail';
-import { DiaryEntry } from './pages/Records/DiaryEntry';
+
 import { History } from './pages/Records/History';
 
 import ProfilePage from './pages/Profile';
@@ -39,7 +39,7 @@ export default function App() {
     result: 'home',
     records: 'records',
     record_detail: 'records',
-    diary: 'records',
+
     history: 'records',
     community: 'community',
     community_post_detail: 'community',
@@ -308,9 +308,7 @@ export default function App() {
     if (currentPage === 'record_detail') {
       return <RecordDetailPage record={selectedRecord} onBack={() => setCurrentPage('records')} />;
     }
-    if (currentPage === 'diary') {
-      return <DiaryEntry onNavigate={setCurrentPage} />;
-    }
+
     if (currentPage === 'history') {
       return <History onNavigate={setCurrentPage} />;
     }
@@ -360,21 +358,21 @@ export default function App() {
             }}
             transition={{ duration: page === activeRootTab || page === getRootTab(currentPage) ? 0.6 : 0.6, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              'absolute inset-0 min-h-screen transform-gpu will-change-transform',
+              'absolute inset-0 min-h-screen transform-gpu will-change-transform overflow-y-auto',
               activeRootTab === page && !overlayPageVisible ? 'pointer-events-auto z-10' : 'pointer-events-none z-0'
             )}
           >
             {renderPrimaryTab(page)}
           </motion.div>
         ))}
-        <AnimatePresence mode={pagePresenceMode}>
+        <AnimatePresence mode="sync" initial={false}>
           {overlayPageVisible && (
             <motion.div
               key={currentPage}
               initial={pageTransition.initial}
               animate={pageTransition.animate}
               exit={pageTransition.exit}
-              className="absolute inset-0 z-20 min-h-screen transform-gpu will-change-transform"
+              className="absolute inset-0 z-20 min-h-screen transform-gpu will-change-transform bg-gray-50 overflow-y-auto"
             >
               {renderOverlayPage()}
             </motion.div>

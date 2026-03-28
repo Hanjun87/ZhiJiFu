@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Scan, Search, Eye, Plus } from 'lucide-react';
+import { ChevronRight, Eye, Plus, Camera, Sun } from 'lucide-react';
 import { Record as SkinRecord } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -41,6 +41,33 @@ const OLDER_RECORDS = [
   },
 ];
 
+const SAMPLE_DIARY_ENTRIES = [
+  {
+    id: '1',
+    title: "今日皮肤状况",
+    date: "2024年01月15日 · 上午 9:30",
+    status: "良好" as const,
+    image: "https://picsum.photos/seed/diary1/200/200",
+  },
+  {
+    id: '2',
+    title: "晒后修复记录",
+    date: "2024年01月14日 · 下午 6:15",
+    status: "恢复中" as const,
+    image: "https://picsum.photos/seed/diary2/200/200",
+  },
+];
+
+const OLDER_DIARY_ENTRIES = [
+  {
+    id: '3',
+    title: "冬季保湿打卡",
+    date: "2024年01月10日 · 晚上 8:00",
+    status: "已结束" as const,
+    image: "https://picsum.photos/seed/diary3/200/200",
+  },
+];
+
 export default function Records({
   records,
   onSelect,
@@ -55,34 +82,41 @@ export default function Records({
     typicalImage: r.image,
   }));
 
+  const statusColorMap: Record<string, string> = {
+    '恢复中': 'bg-emerald-100 text-emerald-700',
+    '待复查': 'bg-blue-100 text-blue-700',
+    '已结束': 'bg-gray-100 text-gray-600',
+    '良好': 'bg-emerald-100 text-emerald-700',
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 pb-24">
-      <header className="sticky top-0 z-10 flex items-center justify-center border-b border-white/60 bg-white/85 p-6 backdrop-blur-xl">
-        <h2 className="text-lg font-bold text-gray-900">健康档案</h2>
-        <button 
-          onClick={() => onNavigate('history')}
-          className="absolute right-6 text-blue-500 text-xs font-medium"
-        >
-          历史记录
-        </button>
+      {/* Header */}
+      <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
+        <h1 className="text-lg font-bold text-gray-900 text-center">健康档案</h1>
       </header>
 
-      <div className="p-4">
-        <div className="flex bg-gray-200 p-1 rounded-xl mb-6">
+      <div className="p-6">
+        {/* Tab Switcher - 统一风格 */}
+        <div className="flex bg-gray-100/80 p-1.5 rounded-2xl mb-6">
           <button 
             onClick={() => setCurrentTab('records')}
             className={cn(
-              "flex-1 py-2 text-sm font-bold text-center rounded-lg transition-all",
-              currentTab === 'records' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500"
+              "flex-1 py-2.5 text-sm font-bold text-center rounded-xl transition-all duration-200",
+              currentTab === 'records' 
+                ? "bg-white text-blue-600 shadow-sm" 
+                : "text-gray-500 hover:text-gray-700"
             )}
           >
             检测记录
           </button>
           <button 
-            onClick={() => onNavigate('diary')}
+            onClick={() => setCurrentTab('diary')}
             className={cn(
-              "flex-1 py-2 text-sm font-bold text-center rounded-lg transition-all",
-              currentTab === 'diary' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500"
+              "flex-1 py-2.5 text-sm font-bold text-center rounded-xl transition-all duration-200",
+              currentTab === 'diary' 
+                ? "bg-white text-blue-600 shadow-sm" 
+                : "text-gray-500 hover:text-gray-700"
             )}
           >
             皮肤日记
@@ -91,13 +125,13 @@ export default function Records({
 
         {currentTab === 'records' && (
           <>
-            <section className="mb-6">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">最近记录</h3>
+            <section className="mb-8">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">最近记录</h3>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.28 }}
-                className="space-y-3"
+                className="space-y-4"
               >
                 {allRecords.slice(0, 2).map((record) => (
                   <RecordCard key={record.id} record={record} onSelect={onSelect} />
@@ -106,12 +140,12 @@ export default function Records({
             </section>
 
             <section>
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">更早记录</h3>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">更早记录</h3>
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.28, delay: 0.06 }}
-                className="space-y-3"
+                className="space-y-4"
               >
                 {allRecords.slice(2).map((record) => (
                   <RecordCard key={record.id} record={record} onSelect={onSelect} />
@@ -131,15 +165,134 @@ export default function Records({
             </section>
           </>
         )}
+
+        {currentTab === 'diary' && (
+          <>
+            <section className="mb-8">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">最近记录</h3>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.28 }}
+                className="space-y-4"
+              >
+                {SAMPLE_DIARY_ENTRIES.map((entry) => (
+                  <motion.button
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -2, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full flex items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                  >
+                    <img 
+                      src={entry.image} 
+                      alt={entry.title} 
+                      className="w-16 h-16 rounded-xl object-cover bg-gray-100" 
+                      referrerPolicy="no-referrer" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1.5">
+                        <h4 className="font-bold text-gray-900 truncate">{entry.title}</h4>
+                        <span className={cn("text-[10px] px-2.5 py-1 rounded-full font-bold", statusColorMap[entry.status] || 'bg-gray-100 text-gray-600')}>
+                          {entry.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mb-2">{entry.date}</p>
+                      <div className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold">
+                        <Eye size={14} />
+                        <span>查看详情</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-gray-300" />
+                  </motion.button>
+                ))}
+              </motion.div>
+            </section>
+
+            <section>
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">更早记录</h3>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.28, delay: 0.06 }}
+                className="space-y-4"
+              >
+                {OLDER_DIARY_ENTRIES.map((entry) => (
+                  <motion.button
+                    key={entry.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ y: -2, scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                    className="w-full flex items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                  >
+                    <img 
+                      src={entry.image} 
+                      alt={entry.title} 
+                      className="w-16 h-16 rounded-xl object-cover bg-gray-100" 
+                      referrerPolicy="no-referrer" 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start mb-1.5">
+                        <h4 className="font-bold text-gray-900 truncate">{entry.title}</h4>
+                        <span className={cn("text-[10px] px-2.5 py-1 rounded-full font-bold", statusColorMap[entry.status] || 'bg-gray-100 text-gray-600')}>
+                          {entry.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-400 mb-2">{entry.date}</p>
+                      <div className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold">
+                        <Eye size={14} />
+                        <span>查看详情</span>
+                      </div>
+                    </div>
+                    <ChevronRight size={20} className="text-gray-300" />
+                  </motion.button>
+                ))}
+              </motion.div>
+            </section>
+
+            {/* 快速记录卡片 */}
+            <section className="mt-8">
+              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">快速记录</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="p-4 rounded-2xl bg-white shadow-sm border border-gray-100 text-left"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
+                    <Camera className="text-blue-600" size={20} />
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">拍照记录</p>
+                  <p className="text-xs text-gray-400 mt-1">记录今日皮肤状态</p>
+                </motion.button>
+                <motion.button
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="p-4 rounded-2xl bg-white shadow-sm border border-gray-100 text-left"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
+                    <Sun className="text-amber-500" size={20} />
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">防晒打卡</p>
+                  <p className="text-xs text-gray-400 mt-1">记录防晒措施</p>
+                </motion.button>
+              </div>
+            </section>
+          </>
+        )}
       </div>
 
+      {/* FAB - 统一风格 */}
       <motion.button 
-        onClick={() => onNavigate('diary')}
-        whileHover={{ scale: 1.04, y: -3 }}
-        whileTap={{ scale: 0.94 }}
-        className="fixed bottom-28 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_18px_48px_rgba(37,99,235,0.38)]"
+        whileHover={{ scale: 1.05, y: -2 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-28 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_8px_30px_rgba(37,99,235,0.4)]"
       >
-        <Plus size={32} />
+        <Plus size={28} />
       </motion.button>
     </div>
   );
@@ -160,21 +313,28 @@ const RecordCard: React.FC<RecordCardProps> = ({ record, onSelect }) => {
   return (
     <motion.button
       onClick={() => onSelect(record)}
-      initial={{ opacity: 0, y: 16, scale: 0.985 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -2, scale: 1.01 }}
-      whileTap={{ scale: 0.985 }}
-      transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
-      className="w-full flex items-center gap-4 rounded-[22px] border border-white/70 bg-white/90 p-3 text-left shadow-[0_18px_40px_rgba(15,23,42,0.05)] backdrop-blur-xl"
+      whileTap={{ scale: 0.99 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+      className="w-full flex items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
     >
-      <img src={record.image} alt={record.title} className="w-16 h-16 rounded-lg object-cover border border-gray-100" referrerPolicy="no-referrer" />
+      <img 
+        src={record.image} 
+        alt={record.title} 
+        className="w-16 h-16 rounded-xl object-cover bg-gray-100" 
+        referrerPolicy="no-referrer" 
+      />
       <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start mb-1">
+        <div className="flex justify-between items-start mb-1.5">
           <h4 className="font-bold text-gray-900 truncate">{record.title}</h4>
-          <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-bold", statusColorMap[record.status] || 'bg-gray-100 text-gray-600')}>{record.status}</span>
+          <span className={cn("text-[10px] px-2.5 py-1 rounded-full font-bold", statusColorMap[record.status] || 'bg-gray-100 text-gray-600')}>
+            {record.status}
+          </span>
         </div>
-        <p className="text-[10px] text-gray-400 mb-2">{record.date}</p>
-        <div className="flex items-center gap-1 text-blue-600 text-[10px] font-bold">
+        <p className="text-xs text-gray-400 mb-2">{record.date}</p>
+        <div className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold">
           <Eye size={14} />
           <span>查看报告</span>
         </div>

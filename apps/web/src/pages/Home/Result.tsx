@@ -15,7 +15,7 @@ export default function Result({
   onNavigate: (page: any) => void;
 }) {
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),transparent_52%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] pb-36">
+    <div className="flex h-full flex-col bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.12),transparent_52%),linear-gradient(180deg,#f8fafc_0%,#f1f5f9_100%)] pb-36">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-white/60 bg-white/80 p-6 backdrop-blur-xl">
         <button onClick={() => onNavigate('home')} className="text-gray-400">
           <ArrowLeft size={24} />
