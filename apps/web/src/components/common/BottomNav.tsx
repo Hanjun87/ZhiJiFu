@@ -27,14 +27,14 @@ export const BottomNav = ({ activePage, onNavigate }: { activePage: Page, onNavi
           className={cn(
             'relative flex min-h-[68px] flex-col items-center justify-center gap-1 overflow-hidden rounded-2xl px-2 text-xs font-semibold transition-all duration-300',
             (activePage === item.id ||
-              (item.id === 'profile' && ['consultations', 'appointments', 'settings', 'about'].includes(activePage)) ||
+              (item.id === 'profile' && ['consultations', 'appointments', 'settings', 'about', 'profile_edit'].includes(activePage)) ||
               (item.id === 'records' && ['diary', 'history'].includes(activePage)))
               ? 'text-blue-600'
               : 'text-slate-400 hover:text-slate-600'
           )}
         >
           {(activePage === item.id ||
-            (item.id === 'profile' && ['consultations', 'appointments', 'settings', 'about'].includes(activePage)) ||
+            (item.id === 'profile' && ['consultations', 'appointments', 'settings', 'about', 'profile_edit'].includes(activePage)) ||
             (item.id === 'records' && ['diary', 'history'].includes(activePage))) && (
             <motion.div
               layoutId="bottom-nav-active-pill"

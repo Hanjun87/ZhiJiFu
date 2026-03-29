@@ -26,7 +26,7 @@ def load_env_file(path):
 
 load_env_file(os.path.join(PROJECT_ROOT, '.env'))
 
-WEB_PORT = int(os.getenv('WEB_PORT', '3000'))
+WEB_PORT = int(os.getenv('WEB_PORT', '3001'))
 DJANGO_PORT = int(os.getenv('DJANGO_PORT', '8788'))
 API_PORT = int(os.getenv('API_PORT', '8790'))
 

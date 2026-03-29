@@ -9,6 +9,8 @@ import Home from './pages/Home';
 import CameraPage from './pages/Home/Camera';
 import Analysis from './pages/Home/Analysis';
 import Result from './pages/Home/Result';
+import SkinRecordAnalysis from './pages/Home/SkinRecordAnalysis';
+import SkinRecordResult from './pages/Home/SkinRecordResult';
 import RecordsPage from './pages/Records';
 import RecordDetailPage from './pages/Records/RecordDetail';
 
@@ -16,13 +18,15 @@ import { History } from './pages/Records/History';
 
 import ProfilePage from './pages/Profile';
 import PlaceholderPage from './pages/Profile/PlaceholderPage';
+import SettingsPage from './pages/Profile/Settings';
+import ProfileEditPage from './pages/Profile/ProfileEdit';
 import { CommunityFeed } from './pages/Community/CommunityFeed';
 import { PostDetail } from './pages/Community/PostDetail';
 import { ExpertColumn } from './pages/Community/ExpertColumn';
 import { CreatePost } from './pages/Community/CreatePost';
 import { Page, Record as SkinRecord, AnalysisResult } from './types';
 import { BottomNav } from './components/common/BottomNav';
-import { MessageSquare, Calendar, Settings, Info } from 'lucide-react';
+import { MessageSquare, Calendar, Settings, ArrowLeft } from 'lucide-react';
 import { cn } from './lib/utils';
 import { getPageTransition, isTabPage, pagePresenceMode, resolveTransition } from './lib/transitions';
 
@@ -46,10 +50,13 @@ export default function App() {
     community_expert: 'community',
     community_create: 'community',
     profile: 'profile',
+    profile_edit: 'profile',
     consultations: 'profile',
     appointments: 'profile',
     settings: 'profile',
     about: 'profile',
+    skin_record_analysis: 'home',
+    skin_record_result: 'home',
   };
   const [currentPage, _setCurrentPage] = useState<Page>('home');
   const reducedMotion = useReducedMotion();
@@ -74,6 +81,7 @@ export default function App() {
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSavingDiary, setIsSavingDiary] = useState(false);
+  const [cameraMode, setCameraMode] = useState<'skin' | 'record'>('skin');
 
 
 
@@ -83,6 +91,7 @@ export default function App() {
   const [cameraError, setCameraError] = useState('');
   const [cameraLoading, setCameraLoading] = useState(false);
   const [cameraReady, setCameraReady] = useState(false);
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
   // --- AI Logic ---
 
@@ -179,7 +188,7 @@ export default function App() {
       if (!navigator.mediaDevices?.getUserMedia) {
         throw new Error('当前设备不支持相机调用');
       }
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode } });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
@@ -210,6 +219,12 @@ export default function App() {
     setCameraReady(false);
   };
 
+  const switchCamera = () => {
+    stopCamera();
+    setFacingMode(prev => prev === 'environment' ? 'user' : 'environment');
+    setTimeout(() => startCamera(), 100);
+  };
+
   const takePhoto = () => {
     if (!cameraReady) {
       setCameraError('相机尚未就绪，请先授权并开启相机');
@@ -224,7 +239,18 @@ export default function App() {
         const dataUrl = canvasRef.current.toDataURL('image/jpeg');
         setCapturedImage(dataUrl);
         stopCamera();
-        analyzeSkin(dataUrl);
+        
+        // 根据模式选择不同的处理流程
+        if (cameraMode === 'skin') {
+          analyzeSkin(dataUrl);
+        } else {
+          // 记录皮肤状态模式
+          setCurrentPage('skin_record_analysis');
+          // 模拟分析过程
+          setTimeout(() => {
+            setCurrentPage('skin_record_result');
+          }, 2500);
+        }
       }
     }
   };
@@ -242,7 +268,7 @@ export default function App() {
   // --- Render Helpers ---
 
   const pageTransition = getPageTransition(transitionState.kind, transitionState.direction, Boolean(reducedMotion));
-  const immersivePage = ['camera', 'analysis', 'result'].includes(currentPage);
+  const immersivePage = ['camera', 'analysis', 'result', 'skin_record_analysis', 'skin_record_result'].includes(currentPage);
   const activeRootTab = getRootTab(currentPage);
   const activeRootTabIndex = primaryTabs.indexOf(activeRootTab);
   const overlayPageVisible = !isTabPage(currentPage);
@@ -287,8 +313,11 @@ export default function App() {
           cameraLoading={cameraLoading}
           startCamera={startCamera}
           takePhoto={takePhoto}
+          switchCamera={switchCamera}
           onNavigate={setCurrentPage}
           onFileSelect={handleFileSelect}
+          mode={cameraMode}
+          setMode={setCameraMode}
         />
       );
     }
@@ -302,6 +331,25 @@ export default function App() {
           isSavingDiary={isSavingDiary}
           onSaveRecord={handleSaveRecord}
           onNavigate={setCurrentPage}
+        />
+      );
+    }
+    if (currentPage === 'skin_record_analysis') {
+      return <SkinRecordAnalysis capturedImage={capturedImage} />;
+    }
+    if (currentPage === 'skin_record_result') {
+      return (
+        <SkinRecordResult
+          capturedImage={capturedImage}
+          onSave={() => {
+            setIsSavingDiary(true);
+            setTimeout(() => {
+              setIsSavingDiary(false);
+              setCurrentPage('records');
+            }, 800);
+          }}
+          onNavigate={setCurrentPage}
+          isSaving={isSavingDiary}
         />
       );
     }
@@ -319,10 +367,45 @@ export default function App() {
       return <PlaceholderPage title="专家预约" icon={<Calendar size={48} />} onBack={() => setCurrentPage('profile')} />;
     }
     if (currentPage === 'settings') {
-      return <PlaceholderPage title="设置" icon={<Settings size={48} />} onBack={() => setCurrentPage('profile')} />;
+      return <SettingsPage onBack={() => setCurrentPage('profile')} />;
+    }
+    if (currentPage === 'profile_edit') {
+      return <ProfileEditPage onBack={() => setCurrentPage('profile')} />;
     }
     if (currentPage === 'about') {
-      return <PlaceholderPage title="关于应用" icon={<Info size={48} />} onBack={() => setCurrentPage('profile')} />;
+      return (
+        <div className="flex flex-col min-h-screen bg-gray-50">
+          {/* Header */}
+          <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
+            <div className="flex items-center justify-between">
+              <button 
+                onClick={() => setCurrentPage('profile')} 
+                className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
+              >
+                <ArrowLeft size={18} />
+              </button>
+              <h1 className="text-lg font-bold text-gray-900">关于应用</h1>
+              <div className="w-9" />
+            </div>
+          </header>
+
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex-1 flex flex-col items-center justify-center p-12 text-center"
+          >
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-blue-100 rounded-3xl flex items-center justify-center mb-6 shadow-sm p-4">
+              <img src="/logo.png" alt="知己肤" className="w-16 h-16 object-contain" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">知己肤</h3>
+            <p className="text-gray-400 text-sm max-w-xs mb-6">AI 驱动的皮肤健康检测与管理平台</p>
+            <div className="text-xs text-gray-400">
+              <p>版本 1.0.0</p>
+            </div>
+          </motion.div>
+        </div>
+      );
     }
     if (currentPage === 'community_post_detail') {
       return <PostDetail onNavigate={setCurrentPage} />;

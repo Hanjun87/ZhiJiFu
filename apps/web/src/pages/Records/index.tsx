@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Eye, Plus, Camera, Sun } from 'lucide-react';
+import { ChevronRight, Eye } from 'lucide-react';
 import { Record as SkinRecord } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -93,35 +93,36 @@ export default function Records({
     <div className="flex flex-col min-h-screen bg-gray-50 pb-24">
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
-        <h1 className="text-lg font-bold text-gray-900 text-center">健康档案</h1>
+        {/* Tab Switcher - 统一风格 */}
+        <div className="flex items-center justify-center">
+          <div className="flex bg-gray-100 rounded-full p-1">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setCurrentTab('records')}
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                currentTab === 'records'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              检测记录
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setCurrentTab('diary')}
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
+                currentTab === 'diary'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              皮肤日记
+            </motion.button>
+          </div>
+        </div>
       </header>
 
       <div className="p-6">
-        {/* Tab Switcher - 统一风格 */}
-        <div className="flex bg-gray-100/80 p-1.5 rounded-2xl mb-6">
-          <button 
-            onClick={() => setCurrentTab('records')}
-            className={cn(
-              "flex-1 py-2.5 text-sm font-bold text-center rounded-xl transition-all duration-200",
-              currentTab === 'records' 
-                ? "bg-white text-blue-600 shadow-sm" 
-                : "text-gray-500 hover:text-gray-700"
-            )}
-          >
-            检测记录
-          </button>
-          <button 
-            onClick={() => setCurrentTab('diary')}
-            className={cn(
-              "flex-1 py-2.5 text-sm font-bold text-center rounded-xl transition-all duration-200",
-              currentTab === 'diary' 
-                ? "bg-white text-blue-600 shadow-sm" 
-                : "text-gray-500 hover:text-gray-700"
-            )}
-          >
-            皮肤日记
-          </button>
-        </div>
 
         {currentTab === 'records' && (
           <>
@@ -253,47 +254,10 @@ export default function Records({
                 ))}
               </motion.div>
             </section>
-
-            {/* 快速记录卡片 */}
-            <section className="mt-8">
-              <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-1">快速记录</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <motion.button
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="p-4 rounded-2xl bg-white shadow-sm border border-gray-100 text-left"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
-                    <Camera className="text-blue-600" size={20} />
-                  </div>
-                  <p className="text-sm font-bold text-gray-900">拍照记录</p>
-                  <p className="text-xs text-gray-400 mt-1">记录今日皮肤状态</p>
-                </motion.button>
-                <motion.button
-                  whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="p-4 rounded-2xl bg-white shadow-sm border border-gray-100 text-left"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center mb-3">
-                    <Sun className="text-amber-500" size={20} />
-                  </div>
-                  <p className="text-sm font-bold text-gray-900">防晒打卡</p>
-                  <p className="text-xs text-gray-400 mt-1">记录防晒措施</p>
-                </motion.button>
-              </div>
-            </section>
           </>
         )}
       </div>
 
-      {/* FAB - 统一风格 */}
-      <motion.button 
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.95 }}
-        className="fixed bottom-28 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-[0_8px_30px_rgba(37,99,235,0.4)]"
-      >
-        <Plus size={28} />
-      </motion.button>
     </div>
   );
 }

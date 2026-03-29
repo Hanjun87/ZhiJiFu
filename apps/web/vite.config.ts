@@ -13,7 +13,10 @@ export default defineConfig(() => {
       },
     },
     server: {
-      hmr: process.env.DISABLE_HMR !== 'true',
+      port: 3001,
+      hmr: {
+        port: 3001,
+      },
       proxy: {
         '/api': {
           target: proxyTarget,

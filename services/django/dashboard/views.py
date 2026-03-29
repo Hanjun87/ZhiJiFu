@@ -31,12 +31,32 @@ def health(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def analyze_skin(request):
+    """识别皮肤问题"""
     try:
         payload = parse_json_body(request)
         image_base64 = payload.get("imageBase64")
         if not image_base64 or not isinstance(image_base64, str):
             raise ValueError("缺少图片数据")
-        result = run_analysis(image_base64, request_source="app", remote_addr=get_remote_addr(request))
+        result = run_analysis(image_base64, request_source="app", remote_addr=get_remote_addr(request), mode="diagnosis")
+        return JsonResponse(result)
+    except ValueError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+    except RuntimeError as exc:
+        return JsonResponse({"message": str(exc)}, status=502)
+    except Exception as exc:
+        return JsonResponse({"message": str(exc)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def analyze_skin_record(request):
+    """记录皮肤状态 - 分析照片质量和皮肤状态"""
+    try:
+        payload = parse_json_body(request)
+        image_base64 = payload.get("imageBase64")
+        if not image_base64 or not isinstance(image_base64, str):
+            raise ValueError("缺少图片数据")
+        result = run_analysis(image_base64, request_source="app", remote_addr=get_remote_addr(request), mode="record")
         return JsonResponse(result)
     except ValueError as exc:
         return JsonResponse({"message": str(exc)}, status=400)
@@ -83,7 +103,7 @@ def analyze(request):
             raise ValueError("当前仅支持 external_ai_api")
         if not image_base64 or not isinstance(image_base64, str):
             raise ValueError("缺少图片数据")
-        result = run_analysis(image_base64, request_source="admin", remote_addr=get_remote_addr(request))
+        result = run_analysis(image_base64, request_source="admin", remote_addr=get_remote_addr(request), mode="diagnosis")
         return JsonResponse(result)
     except ValueError as exc:
         return JsonResponse({"message": str(exc)}, status=400)

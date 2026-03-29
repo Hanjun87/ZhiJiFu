@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, User, Sparkles, Shield, Zap } from 'lucide-react';
+import { Camera, Shield, Zap } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Page } from '../../types';
 
@@ -13,42 +13,32 @@ export default function Home({ onNavigate }: { onNavigate: (p: Page) => void }) 
           animate={{ scale: [1, 1.02, 1], opacity: [0.8, 1, 0.9] }}
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
         />
-        <div className="flex justify-between items-center">
-          <div className="relative z-10">
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center gap-2 mb-2"
-            >
-              <Sparkles size={14} className="text-blue-500" />
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-500">知己肤</p>
-            </motion.div>
-            <motion.h1 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-3xl font-black tracking-tight text-gray-900"
-            >
-              您好，访客
-            </motion.h1>
-            <motion.p 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="mt-2 text-sm text-gray-500"
-            >
-              AI 驱动的皮肤健康检测与管理
-            </motion.p>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate('profile')}
-            className="relative z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-blue-500 shadow-lg shadow-blue-100 border border-blue-50"
+        <div className="relative z-10">
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center gap-2 mb-2"
           >
-            <User size={24} />
-          </motion.button>
+            <img src="/logo.png" alt="知己肤" className="w-5 h-5 object-contain" />
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-500">知己肤</p>
+          </motion.div>
+          <motion.h1 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-3xl font-black tracking-tight text-gray-900"
+          >
+            您好，访客
+          </motion.h1>
+          <motion.p 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-2 text-sm text-gray-500"
+          >
+            AI 驱动的皮肤健康检测与管理
+          </motion.p>
         </div>
       </header>
 
