@@ -140,6 +140,10 @@ const MOCK_SAVED = [
 export default function Profile({ onNavigate }: { onNavigate: (p: Page) => void }) {
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
+  const handlePostClick = (postId: string) => {
+    onNavigate('community_post_detail');
+  };
+
   const stats = [
     { label: '帖子', value: 128 },
     { label: '粉丝', value: '3.2k' },
@@ -184,15 +188,12 @@ export default function Profile({ onNavigate }: { onNavigate: (p: Page) => void 
               onClick={() => onNavigate('profile_edit')}
               className="relative shrink-0"
             >
-              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-100 to-blue-50 ring-4 ring-white shadow-lg">
-                <img 
-                  src="https://picsum.photos/seed/avatar/200/200" 
-                  alt="Avatar" 
+              <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-blue-50 ring-4 ring-white shadow-lg">
+                <img
+                  src="https://picsum.photos/seed/avatar/200/200"
+                  alt="Avatar"
                   className="w-full h-full object-cover"
                 />
-              </div>
-              <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-xl bg-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                <Camera size={14} className="text-white" />
               </div>
             </motion.button>
             
@@ -297,6 +298,7 @@ export default function Profile({ onNavigate }: { onNavigate: (p: Page) => void 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.1 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => handlePostClick(post.id)}
                 className="relative bg-gray-100 rounded-2xl overflow-hidden cursor-pointer group shadow-sm"
               >
                 <img
@@ -343,6 +345,7 @@ export default function Profile({ onNavigate }: { onNavigate: (p: Page) => void 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: idx * 0.1 + 0.05 }}
                 whileTap={{ scale: 0.98 }}
+                onClick={() => handlePostClick(post.id)}
                 className="relative bg-gray-100 rounded-2xl overflow-hidden cursor-pointer group shadow-sm"
               >
                 <img

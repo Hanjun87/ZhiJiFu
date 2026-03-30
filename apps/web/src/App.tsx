@@ -61,6 +61,7 @@ export default function App() {
     diary_detail: 'records',
   };
   const [currentPage, _setCurrentPage] = useState<Page>('home');
+  const [previousPage, setPreviousPage] = useState<Page>('home');
   const reducedMotion = useReducedMotion();
   const [transitionState, setTransitionState] = useState(() => resolveTransition('home', 'home'));
 
@@ -73,6 +74,7 @@ export default function App() {
     const currentRootTab = getRootTab(currentPage);
     const nextRootTab = getRootTab(page);
     setTransitionState(resolveTransition(currentPage, page));
+    setPreviousPage(currentPage);
     _setCurrentPage(page);
   };
 
@@ -417,7 +419,8 @@ export default function App() {
       );
     }
     if (currentPage === 'community_post_detail') {
-      return <PostDetail onNavigate={setCurrentPage} />;
+      const backToPage = previousPage === 'profile' ? 'profile' : 'community';
+      return <PostDetail onNavigate={setCurrentPage} backTo={backToPage} />;
     }
     if (currentPage === 'community_expert') {
       return <ExpertColumn onNavigate={setCurrentPage} />;

@@ -77,23 +77,28 @@ export const Hospital = ({ onNavigate, onSwitchToCommunity }: HospitalProps) => 
       
       {/* Header - 只固定社区/医院标签 */}
       <header className="sticky top-0 z-10 px-5 py-3 pt-6">
-        {/* Tab Switcher - 胶囊按钮风格 */}
-        <div className="flex items-center justify-center">
-          <div className="flex bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={onSwitchToCommunity}
-              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all text-gray-500 hover:bg-gray-50"
-            >
-              社区
-            </motion.button>
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-blue-500 text-white shadow-md shadow-blue-500/25"
-            >
-              医院
-            </motion.button>
+        <div className="flex items-center justify-between">
+          {/* Tab Switcher - 胶囊按钮风格 */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100">
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={onSwitchToCommunity}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all text-gray-500 hover:bg-gray-50"
+              >
+                社区
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-blue-500 text-white shadow-md shadow-blue-500/25"
+              >
+                医院
+              </motion.button>
+            </div>
           </div>
+
+          {/* 占位元素，保持与社区页面对齐 */}
+          <div className="ml-3 w-10 h-10" />
         </div>
       </header>
 

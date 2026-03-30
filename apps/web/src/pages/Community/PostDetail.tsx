@@ -5,7 +5,12 @@ import { MOCK_POSTS } from './constants';
 import { LineChart, Line, ResponsiveContainer, YAxis, XAxis } from 'recharts';
 import { Page } from '../../types';
 
-export const PostDetail = ({ onNavigate }: { onNavigate: (p: Page) => void }) => {
+interface PostDetailProps {
+  onNavigate: (p: Page) => void;
+  backTo?: Page;
+}
+
+export const PostDetail = ({ onNavigate, backTo = 'community' }: PostDetailProps) => {
   const post = MOCK_POSTS[0];
 
   return (
@@ -13,8 +18,8 @@ export const PostDetail = ({ onNavigate }: { onNavigate: (p: Page) => void }) =>
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
         <div className="flex items-center justify-between">
-          <button 
-            onClick={() => onNavigate('community')} 
+          <button
+            onClick={() => onNavigate(backTo)}
             className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
           >
             <ArrowLeft size={18} />
