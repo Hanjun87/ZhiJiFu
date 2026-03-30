@@ -82,3 +82,95 @@ class SkinRecord(models.Model):
 
     def __str__(self):
         return f"{self.record_id} - {self.skin_overall or '未评估'}"
+
+
+class UserProfile(models.Model):
+    """用户资料"""
+    user_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    nickname = models.CharField(max_length=64, blank=True)
+    avatar = models.URLField(blank=True)
+    location = models.CharField(max_length=64, blank=True)
+    is_expert = models.BooleanField(default=False)
+    title = models.CharField(max_length=64, blank=True)
+    hospital = models.CharField(max_length=128, blank=True)
+    experience = models.CharField(max_length=32, blank=True)
+    consultations = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "用户资料"
+        verbose_name_plural = "用户资料"
+
+    def __str__(self):
+        return f"{self.nickname or self.user_id}"
+
+
+class Post(models.Model):
+    """社区帖子"""
+    post_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    author = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='posts')
+    title = models.CharField(max_length=200)
+    content = models.TextField()
+    images = models.JSONField(default=list, blank=True)
+    tags = models.JSONField(default=list, blank=True)
+    is_anonymous = models.BooleanField(default=False)
+    
+    # 关联皮肤报告
+    related_skin_record = models.ForeignKey(SkinRecord, on_delete=models.SET_NULL, null=True, blank=True, related_name='posts')
+    
+    # 统计数据
+    likes = models.PositiveIntegerField(default=0)
+    comments = models.PositiveIntegerField(default=0)
+    shares = models.PositiveIntegerField(default=0)
+    
+    # 状态
+    is_deleted = models.BooleanField(default=False)
+    is_pinned = models.BooleanField(default=False)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "社区帖子"
+        verbose_name_plural = "社区帖子"
+        ordering = ["-is_pinned", "-created_at"]
+
+    def __str__(self):
+        return f"{self.post_id} - {self.title[:30]}"
+
+
+class PostLike(models.Model):
+    """帖子点赞记录"""
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='like_records')
+    user = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='post_likes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "帖子点赞"
+        verbose_name_plural = "帖子点赞"
+        unique_together = ['post', 'user']
+
+    def __str__(self):
+        return f"{self.user} 点赞 {self.post}"
+
+
+class PostComment(models.Model):
+    """帖子评论"""
+    comment_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='post_comments')
+    author = models.ForeignKey(UserProfile, on_delete=models.CASCADE, related_name='comments')
+    content = models.TextField()
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
+    is_expert_reply = models.BooleanField(default=False)
+    is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "帖子评论"
+        verbose_name_plural = "帖子评论"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.comment_id} - {self.content[:30]}"

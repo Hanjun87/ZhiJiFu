@@ -1,6 +1,6 @@
 import { Page } from '../types';
 
-export type TransitionKind = 'tab' | 'tab_home' | 'push' | 'immersive' | 'sheet' | 'replace';
+export type TransitionKind = 'tab' | 'tab_home' | 'push' | 'immersive' | 'sheet';
 
 export interface NavigationTransition {
   direction: number;
@@ -18,6 +18,7 @@ const pageDepth: Record<Page, number> = {
   analysis: 2,
   result: 2,
   record_detail: 1,
+  diary_detail: 1,
   consultations: 1,
   appointments: 1,
   settings: 1,
@@ -25,11 +26,14 @@ const pageDepth: Record<Page, number> = {
   community_post_detail: 1,
   community_expert: 1,
   community_create: 1,
-
   history: 1,
+  hospital: 0,
+  profile_edit: 1,
+  skin_record_analysis: 2,
+  skin_record_result: 2,
 };
 
-const immersivePages = new Set<Page>(['camera', 'analysis', 'result']);
+const immersivePages = new Set<Page>(['camera', 'analysis', 'result', 'skin_record_analysis', 'skin_record_result']);
 const sheetPages = new Set<Page>(['community_create', 'consultations', 'appointments', 'settings', 'about']);
 
 export const pagePresenceMode = 'sync';
@@ -44,7 +48,7 @@ export function getPageDepth(page: Page) {
 
 export function resolveTransition(from: Page, to: Page): NavigationTransition {
   if (from === to) {
-    return { direction: 0, kind: 'replace' };
+    return { direction: 0, kind: 'push' };
   }
 
   if (isTabPage(from) && isTabPage(to)) {
@@ -69,17 +73,11 @@ export function resolveTransition(from: Page, to: Page): NavigationTransition {
     };
   }
 
+  // 默认使用 push 过渡
   const depthDiff = getPageDepth(to) - getPageDepth(from);
-  if (depthDiff !== 0) {
-    return {
-      direction: depthDiff > 0 ? 1 : -1,
-      kind: 'push',
-    };
-  }
-
   return {
-    direction: 1,
-    kind: 'replace',
+    direction: depthDiff >= 0 ? 1 : -1,
+    kind: 'push',
   };
 }
 
@@ -174,19 +172,6 @@ export function getPageTransition(kind: TransitionKind, direction: number, reduc
   }
   if (kind === 'sheet') {
     return sheetTransition;
-  }
-  if (kind === 'replace') {
-    return {
-      initial: { x: direction * 20 },
-      animate: {
-        x: 0,
-        transition: { duration: 0.25, ease: 'easeOut' },
-      },
-      exit: {
-        x: direction * -20,
-        transition: { duration: 0.25, ease: 'easeIn' },
-      },
-    };
   }
   return tabTransition;
 }

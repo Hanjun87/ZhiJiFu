@@ -1,7 +1,15 @@
-import React from 'react';
-import { ArrowLeft, Flashlight, Camera as CameraIcon, Image as ImageIcon, RefreshCw, ScanLine, ClipboardList, Sparkles } from 'lucide-react';
-import { motion } from 'motion/react';
+import React, { useState, useCallback } from 'react';
+import { ArrowLeft, Flashlight, Image as ImageIcon, RefreshCw, ScanLine, ClipboardList, ChevronDown, Plus, FileText, Zap } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Page } from '../../types';
+
+// 模拟档案数据
+const MOCK_RECORDS = [
+  { id: 'new', name: '新建档案', isNew: true },
+  { id: '1', name: '面部痤疮治疗', date: '2024-01-15', isNew: false },
+  { id: '2', name: '湿疹护理记录', date: '2024-01-10', isNew: false },
+  { id: '3', name: '皮肤过敏观察', date: '2024-01-05', isNew: false },
+];
 
 export default function Camera({
   videoRef,
@@ -32,133 +40,266 @@ export default function Camera({
   mode: 'skin' | 'record';
   setMode: (mode: 'skin' | 'record') => void;
 }) {
+  const [selectedRecord, setSelectedRecord] = useState(MOCK_RECORDS[0]);
+  const [showRecordDropdown, setShowRecordDropdown] = useState(false);
+  const [flashEnabled, setFlashEnabled] = useState(false);
+  const [flashLoading, setFlashLoading] = useState(false);
+
+  // 切换闪光灯
+  const toggleFlash = useCallback(async () => {
+    if (!cameraReady || !videoRef.current?.srcObject) {
+      return;
+    }
+
+    setFlashLoading(true);
+    try {
+      const stream = videoRef.current.srcObject as MediaStream;
+      const track = stream.getVideoTracks()[0];
+      
+      const capabilities = track.getCapabilities() as any;
+      if (!capabilities?.torch) {
+        alert('您的设备不支持闪光灯功能');
+        setFlashLoading(false);
+        return;
+      }
+
+      const newFlashState = !flashEnabled;
+      await track.applyConstraints({
+        advanced: [{ torch: newFlashState }] as any
+      });
+      
+      setFlashEnabled(newFlashState);
+    } catch (error) {
+      console.error('切换闪光灯失败:', error);
+      alert('无法切换闪光灯，请检查相机权限');
+    } finally {
+      setFlashLoading(false);
+    }
+  }, [cameraReady, flashEnabled, videoRef]);
 
   return (
-    <div className="fixed top-0 bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-black z-50 flex flex-col">
-      <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-10 bg-gradient-to-b from-black/60 to-transparent">
-        <button onClick={() => onNavigate('home')} className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-md">
-          <ArrowLeft size={24} />
-        </button>
-        <button className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-md">
-          <Flashlight size={24} />
-        </button>
+    <div className="fixed inset-0 bg-black z-50 flex flex-col">
+      {/* 顶部导航栏 */}
+      <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-12 pb-4 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent">
+        <motion.button 
+          onClick={() => onNavigate('home')} 
+          whileTap={{ scale: 0.9 }}
+          className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white"
+        >
+          <ArrowLeft size={22} />
+        </motion.button>
+        
+        {/* 模式指示器 */}
+        <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md">
+          {mode === 'skin' ? (
+            <>
+              <ScanLine size={16} className="text-blue-400" />
+              <span className="text-sm font-medium text-white">识别模式</span>
+            </>
+          ) : (
+            <>
+              <ClipboardList size={16} className="text-emerald-400" />
+              <span className="text-sm font-medium text-white">记录模式</span>
+            </>
+          )}
+        </div>
+
+        <motion.button 
+          onClick={toggleFlash}
+          disabled={!cameraReady || flashLoading}
+          whileTap={{ scale: 0.9 }}
+          className={`w-10 h-10 rounded-full flex items-center justify-center backdrop-blur-md transition-all ${
+            flashEnabled 
+              ? 'bg-yellow-400 text-yellow-900' 
+              : 'bg-white/10 text-white'
+          } ${(!cameraReady || flashLoading) ? 'opacity-50' : ''}`}
+        >
+          <Zap size={20} className={flashEnabled ? 'fill-current' : ''} />
+        </motion.button>
       </div>
-      <div className="flex-grow relative overflow-hidden">
+
+      {/* 档案选择器 - 仅在识别模式下显示 */}
+      {mode === 'skin' && (
+        <div className="absolute top-24 left-4 right-4 z-20">
+          <div className="relative">
+            <motion.button
+              onClick={() => setShowRecordDropdown(!showRecordDropdown)}
+              whileTap={{ scale: 0.98 }}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-2xl bg-white/95 backdrop-blur-md shadow-lg"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <FileText size={16} className="text-blue-600" />
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-gray-400">当前档案</p>
+                  <p className="text-sm font-semibold text-gray-900">{selectedRecord.name}</p>
+                </div>
+              </div>
+              <ChevronDown size={20} className={`text-gray-400 transition-transform ${showRecordDropdown ? 'rotate-180' : ''}`} />
+            </motion.button>
+
+            <AnimatePresence>
+              {showRecordDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl overflow-hidden"
+                >
+                  {MOCK_RECORDS.map((record) => (
+                    <button
+                      key={record.id}
+                      onClick={() => {
+                        setSelectedRecord(record);
+                        setShowRecordDropdown(false);
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-50 transition-colors ${
+                        selectedRecord.id === record.id ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      {record.isNew ? (
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <Plus size={16} className="text-blue-600" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                          <FileText size={16} className="text-gray-500" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium truncate ${record.isNew ? 'text-blue-600' : 'text-gray-900'}`}>
+                          {record.name}
+                        </p>
+                        {!record.isNew && record.date && (
+                          <p className="text-xs text-gray-400">{record.date}</p>
+                        )}
+                      </div>
+                      {selectedRecord.id === record.id && (
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {/* 相机预览区域 */}
+      <div className="flex-1 relative overflow-hidden">
         <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-        <motion.div
-          className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.16),transparent_52%)]"
-          animate={{ opacity: [0.3, 0.55, 0.3] }}
-          transition={{ duration: 4.6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        {!cameraReady && (
-          <div className="absolute inset-0 bg-black/65 flex flex-col items-center justify-center px-8 text-center">
-            <p className="text-white text-sm mb-4">{cameraError || (cameraLoading ? '正在开启摄像头...' : '请先开启摄像头权限')}</p>
-            <button onClick={startCamera} className="px-5 py-2.5 rounded-full bg-blue-500 text-white text-sm font-semibold active:scale-95 transition-transform">
-              {cameraLoading ? '开启中...' : '开启摄像头'}
-            </button>
+        
+        {/* 扫描框 */}
+        {cameraReady && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="relative w-72 h-72">
+              {/* 四角标记 */}
+              <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-white/80 rounded-tl-lg" />
+              <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-white/80 rounded-tr-lg" />
+              <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-white/80 rounded-bl-lg" />
+              <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-white/80 rounded-br-lg" />
+              
+              {/* 扫描线动画 */}
+              <motion.div 
+                animate={{ top: ['0%', '100%'] }}
+                transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
+                className="absolute left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400 to-transparent"
+              />
+            </div>
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-72 h-72 border-2 border-blue-500/50 rounded-3xl relative">
-            <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-2xl" />
-            <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-2xl" />
-            <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-2xl" />
-            <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-2xl" />
-            <motion.div animate={{ top: ['0%', '100%', '0%'] }} transition={{ repeat: Infinity, duration: 3, ease: 'linear' }} className="absolute left-0 right-0 h-0.5 bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.8)]" />
+
+        {/* 未开启摄像头提示 */}
+        {!cameraReady && (
+          <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center px-8 text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
+              <ScanLine size={32} className="text-white/60" />
+            </div>
+            <p className="text-white/80 text-sm mb-6">{cameraError || (cameraLoading ? '正在开启摄像头...' : '需要摄像头权限才能使用')}</p>
+            <motion.button 
+              onClick={startCamera}
+              whileTap={{ scale: 0.95 }}
+              className="px-6 py-3 rounded-full bg-blue-500 text-white text-sm font-semibold"
+            >
+              {cameraLoading ? '开启中...' : '开启摄像头'}
+            </motion.button>
+          </div>
+        )}
+      </div>
+
+      {/* 底部控制面板 */}
+      <div className="bg-white rounded-t-3xl px-6 pt-6 pb-10">
+        {/* 模式切换 */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex p-1 bg-gray-100 rounded-2xl">
+            <motion.button
+              onClick={() => setMode('skin')}
+              whileTap={{ scale: 0.98 }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                mode === 'skin'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-500'
+              }`}
+            >
+              <ScanLine size={18} />
+              识别皮肤问题
+            </motion.button>
+            <motion.button
+              onClick={() => setMode('record')}
+              whileTap={{ scale: 0.98 }}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                mode === 'record'
+                  ? 'bg-white text-emerald-600 shadow-sm'
+                  : 'text-gray-500'
+              }`}
+            >
+              <ClipboardList size={18} />
+              记录皮肤状态
+            </motion.button>
           </div>
         </div>
-        <motion.div
-          className="pointer-events-none absolute bottom-12 left-1/2 h-32 w-32 -translate-x-1/2 rounded-full bg-blue-500/15 blur-3xl"
-          animate={{ scale: [0.9, 1.15, 0.9], opacity: [0.2, 0.5, 0.2] }}
-          transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
-      <div className="bg-white p-6 pb-12 rounded-t-[40px] flex flex-col items-center">
-        {/* Mode Selection Tabs */}
-        <div className="flex items-center gap-2 p-1.5 bg-gray-100 rounded-2xl mb-5">
-          <button
-            onClick={() => setMode('skin')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              mode === 'skin'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <ScanLine size={18} />
-            识别皮肤问题
-          </button>
-          <button
-            onClick={() => setMode('record')}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              mode === 'record'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            <ClipboardList size={18} />
-            记录皮肤状态
-          </button>
-        </div>
 
-        <p className="text-gray-500 text-sm mb-5">
-          {mode === 'skin' ? '请将镜头对准皮肤问题区域，并保持光线充足' : '请拍摄清晰的皮肤照片，用于记录和对比'}
+        {/* 提示文字 */}
+        <p className="text-center text-gray-400 text-xs mb-6">
+          {mode === 'skin' ? '将皮肤问题区域对准框内，保持光线充足' : '拍摄清晰的皮肤照片，记录当前状态'}
         </p>
 
-        {/* Optimized Camera Controls */}
-        <div className="flex items-center justify-center w-full gap-8">
-          {/* Gallery Button */}
+        {/* 控制按钮 */}
+        <div className="flex items-center justify-between px-4">
+          {/* 相册 */}
           <motion.button 
             onClick={() => fileInputRef.current?.click()} 
             whileTap={{ scale: 0.9 }}
-            className="flex flex-col items-center gap-2 group"
+            className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-600 shadow-sm border border-gray-200 group-active:shadow-inner transition-all">
-              <ImageIcon size={24} />
-            </div>
-            <span className="text-xs text-gray-400 font-medium">相册</span>
+            <ImageIcon size={22} />
           </motion.button>
 
-          {/* Main Shutter Button */}
-          <div className="relative">
-            {/* Outer glow ring */}
-            <motion.div
-              className="absolute inset-[-6px] rounded-full bg-blue-400/10"
-              animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
-              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            {/* Main button */}
-            <motion.button 
-              onClick={takePhoto}
-              whileTap={{ scale: 0.92 }}
-              className="relative w-20 h-20 rounded-full bg-gradient-to-br from-white to-gray-50 p-1.5 shadow-xl shadow-blue-200/50"
-            >
-              {/* Inner ring */}
-              <div className="w-full h-full rounded-full border-2 border-blue-500/30 p-1">
-                {/* Center button */}
-                <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 flex items-center justify-center text-white shadow-lg">
-                  {mode === 'skin' ? (
-                    <Sparkles size={28} className="text-white" />
-                  ) : (
-                    <CameraIcon size={28} className="text-white" />
-                  )}
-                </div>
-              </div>
-            </motion.button>
-          </div>
+          {/* 拍照按钮 */}
+          <motion.button 
+            onClick={takePhoto}
+            whileTap={{ scale: 0.9 }}
+            className="relative w-20 h-20 rounded-full bg-white p-1 shadow-lg"
+          >
+            <div className="absolute inset-0 rounded-full border-2 border-gray-200" />
+            <div className={`w-full h-full rounded-full ${mode === 'skin' ? 'bg-blue-500' : 'bg-emerald-500'}`}>
+              <div className="absolute inset-2 rounded-full border-2 border-white/30" />
+            </div>
+          </motion.button>
 
-          {/* Switch Camera Button */}
+          {/* 切换摄像头 */}
           <motion.button 
             onClick={switchCamera} 
             whileTap={{ scale: 0.9 }}
-            className="flex flex-col items-center gap-2 group"
+            className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
           >
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-gray-600 shadow-sm border border-gray-200 group-active:shadow-inner transition-all">
-              <RefreshCw size={24} />
-            </div>
-            <span className="text-xs text-gray-400 font-medium">切换</span>
+            <RefreshCw size={22} />
           </motion.button>
         </div>
       </div>
+
       <canvas ref={canvasRef} className="hidden" />
       <input type="file" ref={fileInputRef} onChange={onFileSelect} accept="image/*" className="hidden" />
     </div>

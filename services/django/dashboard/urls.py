@@ -14,4 +14,11 @@ urlpatterns = [
     path("api/admin/ai/providers", views.providers, name="providers"),
     path("api/admin/ai/config", views.config, name="config"),
     path("api/admin/ai/analyze", views.analyze, name="analyze"),
+    # 社区API
+    path("api/community/posts", views.list_posts, name="list-posts"),
+    path("api/community/posts/create", views.create_post, name="create-post"),
+    path("api/community/posts/<str:post_id>", views.get_post_detail, name="post-detail"),
+    path("api/community/posts/<str:post_id>/like", views.like_post, name="like-post"),
+    path("api/community/posts/<str:post_id>/comments", views.create_comment, name="create-comment"),
+    path("api/community/skin-records", views.get_skin_records, name="skin-records"),
 ]

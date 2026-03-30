@@ -13,6 +13,7 @@ import SkinRecordAnalysis from './pages/Home/SkinRecordAnalysis';
 import SkinRecordResult from './pages/Home/SkinRecordResult';
 import RecordsPage from './pages/Records';
 import RecordDetailPage from './pages/Records/RecordDetail';
+import DiaryDetailPage from './pages/Records/DiaryDetail';
 
 import { History } from './pages/Records/History';
 
@@ -43,12 +44,12 @@ export default function App() {
     result: 'home',
     records: 'records',
     record_detail: 'records',
-
     history: 'records',
     community: 'community',
     community_post_detail: 'community',
     community_expert: 'community',
     community_create: 'community',
+    hospital: 'community',
     profile: 'profile',
     profile_edit: 'profile',
     consultations: 'profile',
@@ -57,6 +58,7 @@ export default function App() {
     about: 'profile',
     skin_record_analysis: 'home',
     skin_record_result: 'home',
+    diary_detail: 'records',
   };
   const [currentPage, _setCurrentPage] = useState<Page>('home');
   const reducedMotion = useReducedMotion();
@@ -78,6 +80,7 @@ export default function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [records, setRecords] = useState<SkinRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<SkinRecord | null>(null);
+  const [selectedDiaryEntry, setSelectedDiaryEntry] = useState<{id: string; date: string; time: string; title: string; status: string; image: string} | null>(null);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSavingDiary, setIsSavingDiary] = useState(false);
@@ -292,6 +295,9 @@ export default function App() {
             setCurrentPage('record_detail');
           }}
           onNavigate={setCurrentPage}
+          onSelectDiary={(entry) => {
+            setSelectedDiaryEntry(entry);
+          }}
         />
       );
     }
@@ -355,6 +361,9 @@ export default function App() {
     }
     if (currentPage === 'record_detail') {
       return <RecordDetailPage record={selectedRecord} onBack={() => setCurrentPage('records')} />;
+    }
+    if (currentPage === 'diary_detail') {
+      return <DiaryDetailPage entry={selectedDiaryEntry} onBack={() => setCurrentPage('records')} />;
     }
 
     if (currentPage === 'history') {
