@@ -27,7 +27,7 @@ export default function SkinRecordResult({
 }: SkinRecordResultProps) {
   const [note, setNote] = useState('');
   
-  // 可调控的肤色和UV指数
+  // 肤色和UV指数
   const [skinToneValue, setSkinToneValue] = useState(30);
   const [uvIndex, setUvIndex] = useState(2);
   
@@ -86,12 +86,15 @@ export default function SkinRecordResult({
 
   // 皮肤指标数据
   const skinMetrics = [
-    { label: '色斑', value: 65 },
-    { label: '黑头', value: 45 },
-    { label: '眼袋', value: 30 },
-    { label: '黑眼圈', value: 55 },
-    { label: '痘痘', value: 25 },
+    { label: '色斑', value: 65, detail: '检测到轻度色斑，建议注意防晒并使用美白产品' },
+    { label: '黑头', value: 45, detail: 'T区有少量黑头，建议定期清洁毛孔' },
+    { label: '眼袋', value: 30, detail: '眼袋轻微，建议保证充足睡眠' },
+    { label: '黑眼圈', value: 55, detail: '黑眼圈中度，建议改善作息并使用眼霜' },
+    { label: '痘痘', value: 25, detail: '皮肤状态良好，无明显痘痘问题' },
   ];
+
+  // 选中的皮肤指标
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
   const skinAge = 20;
 
@@ -136,13 +139,42 @@ export default function SkinRecordResult({
             )}
 
             {/* Key Metrics Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
               {skinMetrics.map((metric) => (
-                <span key={metric.label} className="px-3 py-1 bg-gray-100 text-[10px] font-bold text-gray-600 rounded-full">
+                <motion.button
+                  key={metric.label}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setSelectedMetric(selectedMetric === metric.label ? null : metric.label)}
+                  className={`px-3 py-1 text-[10px] font-bold rounded-full transition-colors ${
+                    selectedMetric === metric.label
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
                   {metric.label}
-                </span>
+                </motion.button>
               ))}
             </div>
+
+            {/* Selected Metric Detail */}
+            {selectedMetric && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="mb-4 p-3 bg-blue-50 rounded-xl border border-blue-100"
+              >
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-bold text-blue-700">{selectedMetric}</span>
+                  <span className="text-xs text-blue-500">
+                    {skinMetrics.find(m => m.label === selectedMetric)?.value}%
+                  </span>
+                </div>
+                <p className="text-xs text-blue-600 leading-relaxed">
+                  {skinMetrics.find(m => m.label === selectedMetric)?.detail}
+                </p>
+              </motion.div>
+            )}
 
             {/* Radar Visualization Placeholder */}
             <div className="relative w-full max-w-[200px] aspect-square mx-auto flex items-center justify-center mb-4">
@@ -199,7 +231,7 @@ export default function SkinRecordResult({
           </div>
         </motion.section>
 
-        {/* 3. 今日肤色 - 可调控 */}
+        {/* 3. 今日肤色 */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -208,7 +240,6 @@ export default function SkinRecordResult({
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-900">今日肤色</h3>
-              <span className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">可调控</span>
             </div>
             
             <div className="space-y-4">
@@ -240,7 +271,7 @@ export default function SkinRecordResult({
           </div>
         </motion.section>
 
-        {/* 4. 今日太阳强度 - 可调控 */}
+        {/* 4. 今日太阳强度 */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -249,7 +280,6 @@ export default function SkinRecordResult({
           <div className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-gray-900">今日太阳强度</h3>
-              <span className="text-[10px] font-bold text-gray-400 tracking-wider uppercase">可调控</span>
             </div>
             
             <div className="flex items-center justify-around py-2">

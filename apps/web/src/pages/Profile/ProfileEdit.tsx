@@ -8,6 +8,7 @@ interface ProfileEditProps {
 
 export default function ProfileEdit({ onBack }: ProfileEditProps) {
   const [nickname, setNickname] = useState('健康守护者');
+  const [bio, setBio] = useState('记录皮肤变化，分享护肤心得。坚持科学护肤，追求健康肌肤。');
   const [avatar, setAvatar] = useState('https://picsum.photos/seed/avatar/200/200');
   const [showAvatarOptions, setShowAvatarOptions] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -91,7 +92,7 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4"
         >
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
             昵称
@@ -107,6 +108,31 @@ export default function ProfileEdit({ onBack }: ProfileEditProps) {
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
               {nickname.length}/20
+            </span>
+          </div>
+        </motion.div>
+
+        {/* Bio Input - 个性签名 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5"
+        >
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">
+            个性签名
+          </label>
+          <div className="relative">
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              maxLength={100}
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+              placeholder="写下你的个性签名..."
+            />
+            <span className="absolute right-3 bottom-3 text-xs text-gray-400">
+              {bio.length}/100
             </span>
           </div>
         </motion.div>
