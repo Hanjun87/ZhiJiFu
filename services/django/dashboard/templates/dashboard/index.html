@@ -1,0 +1,70 @@
+{% load static %}
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="csrf-token" content="{{ csrf_token }}" />
+    <title>SkinAI Django 控制台</title>
+    <link rel="stylesheet" href="{% static 'dashboard/styles.css' %}" />
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="sidebar">
+        <h1>SkinAI</h1>
+        <button data-menu="ai" class="menu active">AI管理</button>
+        <button data-menu="test" class="menu">接口测试</button>
+      </aside>
+
+      <main class="content">
+        <header>
+          <div>
+            <h2>Django 管理控制台</h2>
+            <p class="subtitle">当前登录：{{ request.user.username }}</p>
+          </div>
+          <div class="header-actions">
+            <a class="link-button" href="/admin/">Django Admin</a>
+            <form action="/logout/" method="post">
+              {% csrf_token %}
+              <button type="submit">退出登录</button>
+            </form>
+            <button id="refreshBtn">刷新</button>
+          </div>
+        </header>
+
+        <section id="panel-ai" class="panel active">
+          <div class="card">
+            <h3>接口配置</h3>
+            <input id="endpoint" placeholder="API接口地址 (Endpoint URL)" />
+            <input id="model" placeholder="模型名称 (Model)" />
+            <input id="timeoutMs" placeholder="超时时间ms (1000~120000)" />
+            <input id="apiKey" placeholder="API Key（留空则不修改）" />
+            <div class="button-group">
+              <button id="testConnectBtn" class="secondary" type="button">检测联通性</button>
+              <button id="resetConfigBtn" class="danger" type="button">重置配置</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>提示词配置</h3>
+            <textarea id="systemPrompt" placeholder="系统提示词（system prompt）"></textarea>
+            <textarea id="userPromptTemplate" placeholder="用户提示词模板（user prompt template）"></textarea>
+            <button id="saveBtn" class="primary" type="button">保存配置</button>
+          </div>
+        </section>
+
+        <section id="panel-test" class="panel">
+          <div class="card">
+            <h3>识别接口测试</h3>
+            <input id="testImage" type="file" accept="image/*" />
+            <button id="runTestBtn" class="primary" type="button">开始识别</button>
+            <pre id="testResult"></pre>
+          </div>
+        </section>
+
+        <div id="message"></div>
+      </main>
+    </div>
+
+    <script src="{% static 'dashboard/main.js' %}"></script>
+  </body>
+</html>

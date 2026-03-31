@@ -7,7 +7,7 @@ export const ExpertColumn = ({ onNavigate }: { onNavigate: (p: Page) => void }) 
   const experts = [MOCK_USERS.doctor_lin, MOCK_USERS.prof_zhang];
 
   return (
-    <div className="pb-24 bg-gray-50 h-full overflow-y-auto">
+    <div className="pb-24 bg-gray-50 h-full">
       <header className="sticky top-0 left-0 right-0 bg-white/80 backdrop-blur-xl z-50 px-6 py-3 flex flex-col gap-4 shadow-sm pt-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
