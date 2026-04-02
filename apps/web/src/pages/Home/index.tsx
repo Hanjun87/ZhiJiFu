@@ -5,7 +5,7 @@ import { Page } from '../../types';
 
 export default function Home({ onNavigate }: { onNavigate: (p: Page) => void }) {
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50/50 to-white pb-24">
+    <div className="flex flex-col min-h-screen bg-gradient-to-b from-blue-50/50 to-white pb-28">
       {/* Header */}
       <header className="relative overflow-hidden px-6 pb-8 pt-12">
         <motion.div
@@ -134,7 +134,7 @@ export default function Home({ onNavigate }: { onNavigate: (p: Page) => void }) 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full mb-4"
         >
           <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
           <p className="text-xs text-gray-500">AI 技术仅供参考，如有不适请及时就医</p>

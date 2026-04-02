@@ -31,6 +31,7 @@ const pageDepth: Record<Page, number> = {
   profile_edit: 1,
   skin_record_analysis: 2,
   skin_record_result: 2,
+  disease_trend_test: 1,
 };
 
 export const pagePresenceMode = 'sync';

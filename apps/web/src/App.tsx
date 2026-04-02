@@ -66,6 +66,7 @@ export default function App() {
     skin_record_analysis: 'home',
     skin_record_result: 'home',
     diary_detail: 'records',
+    disease_trend_test: 'profile',
   };
   const [currentPage, _setCurrentPage] = useState<Page>('home');
   const [previousPage, setPreviousPage] = useState<Page>('home');
