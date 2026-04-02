@@ -162,18 +162,20 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
         <div className="w-10" />
       </header>
 
-      <main className="pt-20 pb-8 px-5 max-w-2xl mx-auto space-y-6">
+      <main className="pt-20 pb-8 px-4 max-w-2xl mx-auto space-y-4">
         {/* 1. 皮肤表现 */}
         <motion.section
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
         >
-          <div className="p-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles size={18} className="text-blue-600" />
+              <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+                <Sparkles size={18} className="text-blue-600" />
+              </div>
               <h2 className="font-bold text-gray-900">皮肤表现</h2>
-              <span className="ml-auto text-xs text-gray-400">2024年{entry.date} {entry.time}</span>
+              <span className="ml-auto text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded-full">2024年{entry.date} {entry.time}</span>
             </div>
 
             {/* Photo Preview */}
@@ -232,9 +234,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
         >
-          <div className="p-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4">
-              <Shield size={18} className="text-blue-600" />
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <Shield size={18} className="text-emerald-600" />
+              </div>
               <h2 className="font-bold text-gray-900">护理建议</h2>
             </div>
 
@@ -264,8 +268,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.1 }}
         >
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
+                <Sun size={18} className="text-amber-600" />
+              </div>
               <h3 className="font-bold text-gray-900">今日肤色</h3>
             </div>
             
@@ -302,9 +309,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
         >
-          <div className="p-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4">
-              <Sun size={18} className="text-amber-500" />
+              <div className="w-8 h-8 rounded-xl bg-sky-50 flex items-center justify-center">
+                <Sun size={18} className="text-sky-600" />
+              </div>
               <h3 className="font-bold text-gray-900">当日环境</h3>
             </div>
 
@@ -339,8 +348,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
         >
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center">
+                <Sun size={18} className="text-orange-600" />
+              </div>
               <h3 className="font-bold text-gray-900">今日太阳强度</h3>
             </div>
             
@@ -420,10 +432,12 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.25 }}
         >
-          <div className="p-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <CheckCircle2 size={18} className="text-blue-600" />
+                <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center">
+                  <CheckCircle2 size={18} className="text-violet-600" />
+                </div>
                 <h3 className="font-bold text-gray-900">今日护理与用药</h3>
               </div>
               {careItems.length > 0 && (
@@ -508,9 +522,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
         >
-          <div className="p-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4">
-              <Edit3 size={18} className="text-blue-600" />
+              <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center">
+                <Edit3 size={18} className="text-gray-600" />
+              </div>
               <h3 className="font-bold text-gray-900">备注</h3>
             </div>
             <textarea
@@ -528,9 +544,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.35 }}
         >
-          <div className="p-5">
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-center gap-2 mb-4">
-              <Bot size={18} className="text-purple-600" />
+              <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+                <Bot size={18} className="text-purple-600" />
+              </div>
               <h3 className="font-bold text-gray-900">AI 点评</h3>
             </div>
             <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-4 border border-purple-100">

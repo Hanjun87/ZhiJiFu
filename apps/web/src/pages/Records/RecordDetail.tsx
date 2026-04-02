@@ -141,22 +141,21 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
         </div>
       </header>
 
-      <main className="flex-1 p-5">
+      <main className="flex-1 p-4 max-w-2xl mx-auto">
         {/* 档案标题区 - 简洁文字 */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
-          className="mb-6"
+          className="mb-5 bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
         >
-          <div className="flex items-center gap-2 text-gray-400 text-xs mb-2">
-            <span className="mx-1">·</span>
-            <span>2024年{displayRecord.date}</span>
+          <div className="flex items-center gap-2 text-gray-400 text-xs mb-3">
+            <span className="bg-gray-50 px-2 py-1 rounded-full">2024年{displayRecord.date}</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">{displayRecord.title}</h2>
-          <div className="flex items-center gap-3 mt-2">
-            <span className="text-blue-600 font-bold">{displayRecord.probability}% 匹配度</span>
-            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs rounded-full">
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">{displayRecord.title}</h2>
+          <div className="flex items-center gap-3">
+            <span className="text-blue-600 font-bold bg-blue-50 px-3 py-1 rounded-full text-sm">{displayRecord.probability}% 匹配度</span>
+            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full font-medium">
               {displayRecord.status}
             </span>
           </div>
@@ -167,16 +166,19 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.05 }}
-          className="mb-5"
+          className="mb-5 bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center">
+              <History size={18} className="text-amber-600" />
+            </div>
+            <h3 className="font-bold text-gray-900">历史记录</h3>
             <motion.button
               whileTap={{ scale: 0.98 }}
               onClick={() => setShowHistory(!showHistory)}
-              className="flex items-center gap-2 px-4 py-2 bg-white rounded-full border border-gray-200 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              className="ml-auto flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
             >
-              <History size={16} />
-              <span>历史记录</span>
+              <span>查看全部</span>
               <span className="text-gray-400">({MOCK_HISTORY.length})</span>
             </motion.button>
           </div>
@@ -224,47 +226,51 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
           transition={{ duration: 0.4, delay: 0.1 }}
           className="mb-5"
         >
-          <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <TrendingUp size={16} className="text-emerald-500" />
-            恢复进度
-          </h3>
-          <div className="p-4">
-            <div className="flex justify-between text-xs text-gray-500 mb-2">
-              <span>开始治疗</span>
-              <span>完全恢复</span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-              <motion.div 
-                key={currentHistory?.id ?? 'default'}
-                initial={{ width: 0 }}
-                animate={{ width: `${currentHistory?.progress ?? 65}%` }}
-                transition={{ duration: 1, delay: 0.3 }}
-                className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
-              />
-            </div>
-            <p className="text-xs text-gray-400 mb-4">
-              {currentHistory?.progress === 100 
-                ? '已完全恢复' 
-                : `预计还需 ${Math.ceil((100 - (currentHistory?.progress ?? 65)) / 10)} 周完全恢复`}
-            </p>
+          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-5">
+            <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 flex items-center justify-center">
+                <TrendingUp size={18} className="text-emerald-600" />
+              </div>
+              恢复进度
+            </h3>
+            <div className="p-4 bg-gray-50 rounded-xl">
+              <div className="flex justify-between text-xs text-gray-500 mb-2">
+                <span>开始治疗</span>
+                <span>完全恢复</span>
+              </div>
+              <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+                <motion.div 
+                  key={currentHistory?.id ?? 'default'}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${currentHistory?.progress ?? 65}%` }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                  className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mb-4">
+                {currentHistory?.progress === 100 
+                  ? '已完全恢复' 
+                  : `预计还需 ${Math.ceil((100 - (currentHistory?.progress ?? 65)) / 10)} 周完全恢复`}
+              </p>
 
-            {/* AI 诊断 - 在恢复进度卡片内 */}
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-3 border border-purple-100">
-              <div className="flex items-start gap-2.5">
-                <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
-                  <Bot size={16} className="text-purple-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-700 leading-relaxed">
-                    {currentHistory?.progress === 100 
-                      ? '恭喜！您的皮肤已经完全恢复。建议继续保持良好的护肤习惯，定期进行皮肤检查，预防复发。'
-                      : currentHistory?.progress && currentHistory.progress > 70
-                        ? '恢复情况良好！皮肤状态明显改善，请继续按照当前治疗方案进行护理，注意防晒和保湿。'
-                        : currentHistory?.progress && currentHistory.progress > 40
-                          ? '恢复进度正常，皮肤正在逐步好转。建议继续坚持治疗，避免接触刺激性物质，保持良好的作息习惯。'
-                          : '治疗初期，皮肤正在适应治疗方案。请耐心配合治疗，如有不适请及时咨询医生。'
-                    }
-                  </p>
+              {/* AI 诊断 - 在恢复进度卡片内 */}
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-3 border border-purple-100">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
+                    <Bot size={16} className="text-purple-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-gray-700 leading-relaxed">
+                      {currentHistory?.progress === 100 
+                        ? '恭喜！您的皮肤已经完全恢复。建议继续保持良好的护肤习惯，定期进行皮肤检查，预防复发。'
+                        : currentHistory?.progress && currentHistory.progress > 70
+                          ? '恢复情况良好！皮肤状态明显改善，请继续按照当前治疗方案进行护理，注意防晒和保湿。'
+                          : currentHistory?.progress && currentHistory.progress > 40
+                            ? '恢复进度正常，皮肤正在逐步好转。建议继续坚持治疗，避免接触刺激性物质，保持良好的作息习惯。'
+                            : '治疗初期，皮肤正在适应治疗方案。请耐心配合治疗，如有不适请及时咨询医生。'
+                      }
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -276,13 +282,15 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.15 }}
-          className="mb-5"
+          className="mb-5 bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
         >
-          <h3 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <Shield size={16} className="text-blue-500" />
+          <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
+              <Shield size={18} className="text-blue-600" />
+            </div>
             护理建议
           </h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {(currentHistory?.careAdvice ?? [
               { title: '保持清洁', desc: '每日用温水清洁患处，避免使用刺激性洗护用品' },
               { title: '按时用药', desc: '按照医嘱涂抹药膏，不要自行增减用量' },
@@ -293,7 +301,7 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.3, delay: idx * 0.1 }}
-                className="flex gap-3 p-3"
+                className="flex gap-3 p-3 bg-gray-50 rounded-xl"
               >
                 <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                   {idx + 1}

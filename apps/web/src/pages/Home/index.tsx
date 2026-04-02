@@ -42,17 +42,19 @@ export default function Home({ onNavigate }: { onNavigate: (p: Page) => void }) 
         </div>
       </header>
 
-      <main className="flex flex-col items-center px-6">
+      <main className="flex flex-col items-center px-5 max-w-lg mx-auto">
         {/* Status Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="w-full mb-8 rounded-2xl bg-white p-5 shadow-sm border border-gray-100"
+          className="w-full mb-6 rounded-2xl bg-gradient-to-br from-white to-blue-50/50 p-5 shadow-md border border-blue-100/50"
         >
           <div className="flex items-center gap-3 mb-3">
-            <div className="h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.6)]" />
-            <span className="text-xs font-bold text-gray-500">AI 检测引擎就绪</span>
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-emerald-100">
+              <div className="h-2.5 w-2.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+            </div>
+            <span className="text-xs font-bold text-emerald-700">AI 检测引擎就绪</span>
           </div>
           <p className="text-sm text-gray-600 leading-relaxed">
             拍照后即可获得专业的皮肤分析报告，支持多种常见皮肤问题的智能识别。
@@ -64,30 +66,37 @@ export default function Home({ onNavigate }: { onNavigate: (p: Page) => void }) 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative mb-10"
+          className="relative mb-8"
         >
+          {/* Outer Ring */}
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 20, ease: 'linear' }}
+            className="absolute inset-[-8px] rounded-full border-2 border-dashed border-blue-200/50"
+          />
+          
           {/* Glow Effect */}
           <motion.div
             animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.5, 0.3] }}
             transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-            className="absolute inset-[-20px] rounded-full bg-blue-500 blur-2xl"
+            className="absolute inset-[-20px] rounded-full bg-gradient-to-r from-blue-400 to-purple-400 blur-2xl"
           />
           
           <motion.button
             onClick={() => onNavigate('camera')}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="relative flex h-48 w-48 flex-col items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 shadow-[0_20px_60px_rgba(37,99,235,0.4)]"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="relative flex h-44 w-44 flex-col items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 shadow-[0_20px_60px_rgba(37,99,235,0.4)] border-4 border-white/20"
           >
             <motion.div
-              animate={{ y: [0, -3, 0] }}
+              animate={{ y: [0, -4, 0] }}
               transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-              className="mb-3 rounded-2xl bg-white/20 p-4 backdrop-blur-sm"
+              className="mb-3 rounded-2xl bg-white/25 p-4 backdrop-blur-sm border border-white/20"
             >
-              <Camera size={48} className="text-white" />
+              <Camera size={44} className="text-white" strokeWidth={1.5} />
             </motion.div>
-            <span className="text-lg font-bold text-white">拍照识别</span>
-            <span className="mt-1 text-xs text-blue-100">点击开始检测</span>
+            <span className="text-lg font-bold text-white tracking-wide">拍照识别</span>
+            <span className="mt-1.5 text-xs text-blue-100 font-medium">点击开始检测</span>
           </motion.button>
         </motion.div>
 
@@ -96,33 +105,40 @@ export default function Home({ onNavigate }: { onNavigate: (p: Page) => void }) 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.4 }}
-          className="w-full grid grid-cols-2 gap-3 mb-6"
+          className="w-full grid grid-cols-2 gap-4 mb-6"
         >
-          <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 mb-3">
-              <Zap size={20} />
+          <motion.div 
+            whileHover={{ y: -2, scale: 1.02 }}
+            className="rounded-2xl bg-white p-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center text-blue-600 mb-4 shadow-sm">
+              <Zap size={24} strokeWidth={1.5} />
             </div>
-            <p className="text-sm font-bold text-gray-900 mb-1">快速识别</p>
-            <p className="text-xs text-gray-500">3秒获取分析结果</p>
-          </div>
-          <div className="rounded-2xl bg-white p-4 shadow-sm border border-gray-100">
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 mb-3">
-              <Shield size={20} />
+            <p className="text-base font-bold text-gray-900 mb-2">快速识别</p>
+            <p className="text-sm text-gray-500 leading-relaxed">3秒获取分析结果</p>
+          </motion.div>
+          <motion.div 
+            whileHover={{ y: -2, scale: 1.02 }}
+            className="rounded-2xl bg-white p-5 shadow-md border border-gray-100 hover:shadow-lg transition-shadow"
+          >
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 flex items-center justify-center text-emerald-600 mb-4 shadow-sm">
+              <Shield size={24} strokeWidth={1.5} />
             </div>
-            <p className="text-sm font-bold text-gray-900 mb-1">专业建议</p>
-            <p className="text-xs text-gray-500">AI 辅助健康指导</p>
-          </div>
+            <p className="text-base font-bold text-gray-900 mb-2">专业建议</p>
+            <p className="text-sm text-gray-500 leading-relaxed">AI 辅助健康指导</p>
+          </motion.div>
         </motion.div>
 
         {/* Disclaimer */}
-        <motion.p
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="text-xs text-gray-400 text-center"
+          className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full"
         >
-          AI 技术仅供参考，如有不适请及时就医
-        </motion.p>
+          <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+          <p className="text-xs text-gray-500">AI 技术仅供参考，如有不适请及时就医</p>
+        </motion.div>
       </main>
     </div>
   );
