@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Share2, Shield, Activity, MessageSquare, ThumbsUp, Heart } from 'lucide-react';
+import { Share2, Shield, Activity, MessageSquare, ThumbsUp, Heart } from 'lucide-react';
 import { MOCK_POSTS } from './constants';
 import { LineChart, Line, ResponsiveContainer, YAxis, XAxis } from 'recharts';
 import { Page } from '../../types';
+import BackButton from '../../components/common/BackButton';
 
 interface PostDetailProps {
   onNavigate: (p: Page) => void;
@@ -18,12 +19,7 @@ export const PostDetail = ({ onNavigate, backTo = 'community' }: PostDetailProps
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
         <div className="flex items-center justify-between">
-          <button
-            onClick={() => onNavigate(backTo)}
-            className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton onClick={() => onNavigate(backTo)} />
           <h1 className="text-lg font-bold text-gray-900">帖子详情</h1>
           <button className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
             <Share2 size={18} />

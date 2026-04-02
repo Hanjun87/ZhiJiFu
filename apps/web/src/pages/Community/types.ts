@@ -46,3 +46,23 @@ export interface Article {
   likes: string;
   category: string;
 }
+
+export interface SkinRecord {
+  id: string;
+  createdAt: string;
+  skinOverall: string;
+  skinIssues: string[];
+  photoClarity: number;
+}
+
+export interface CreatePostData {
+  title: string;
+  content: string;
+  images: string[];
+  isAnonymous: boolean;
+  skinRecordId?: string;
+  mainCategory: 'skin' | 'wound' | 'whitening';
+  subCategory?: string | null;
+  location?: string;
+  tags?: string[];
+}

@@ -31,6 +31,25 @@ export const PostCard: React.FC<PostCardProps> = ({ post }) => {
         )}
       </div>
 
+      {post.title && (
+        <h2 className="text-base font-bold text-gray-900 mb-3 leading-tight">
+          {post.title}
+        </h2>
+      )}
+
+      {post.tags && post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {post.tags.map((tag, index) => (
+            <span 
+              key={index}
+              className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+
       <p className="text-sm text-gray-700 leading-relaxed mb-4 line-clamp-3">
         {post.content}
       </p>

@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Share2, Sparkles, Info, Thermometer, Activity, Stethoscope, Droplets, Clock, FileText, UserPlus, Bot } from 'lucide-react';
+import { Share2, Sparkles, Info, Thermometer, Activity, Stethoscope, Droplets, Clock, FileText, UserPlus, Bot } from 'lucide-react';
 import { AnalysisResult } from '../../types';
+import BackButton from '../../components/common/BackButton';
 
 interface ResultProps {
   analysisResult: AnalysisResult | null;
@@ -44,13 +45,7 @@ export default function Result({ analysisResult, isSavingDiary, onSaveRecord, on
       {/* Header - 使用档案详情风格的简洁导航栏 */}
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-xl px-5 py-3 pt-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate('home')}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </motion.button>
+          <BackButton onClick={() => onNavigate('home')} />
           <h1 className="text-lg font-bold text-gray-900">识别结果</h1>
           <motion.button
             whileTap={{ scale: 0.95 }}

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { 
-  ArrowLeft, CheckCircle2, Calendar, Sun, Droplets, Loader2, 
+  CheckCircle2, Calendar, Sun, Droplets, Loader2, 
   Sparkles, Shield, Edit3, ChevronRight, Save, Plus, X
 } from 'lucide-react';
+import BackButton from '../../components/common/BackButton';
 
 interface SkinRecordResultProps {
   capturedImage: string | null;
@@ -29,7 +30,7 @@ export default function SkinRecordResult({
   
   // 肤色和UV指数
   const [skinToneValue, setSkinToneValue] = useState(30);
-  const [uvIndex, setUvIndex] = useState(2);
+  const [uvIndex, setUvIndex] = useState(3);
   
   // 护理项目列表（用户可自己添加）
   const [careItems, setCareItems] = useState<CareItem[]>([
@@ -96,19 +97,11 @@ export default function SkinRecordResult({
   // 选中的皮肤指标
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
-  const skinAge = 20;
-
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-xl fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 border-b border-gray-100">
-        <motion.button 
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onNavigate('home')}
-          className="hover:bg-gray-100 transition-colors p-2 rounded-full flex items-center justify-center"
-        >
-          <ArrowLeft size={20} className="text-blue-600" />
-        </motion.button>
+        <BackButton onClick={() => onNavigate('home')} />
         <h1 className="font-bold text-lg tracking-tight text-gray-900">今日报告</h1>
         <motion.button 
           whileTap={{ scale: 0.95 }}
@@ -185,10 +178,6 @@ export default function SkinRecordResult({
                     </div>
                   </div>
                 </div>
-              </div>
-              <div className="bg-white rounded-full w-16 h-16 flex flex-col items-center justify-center shadow-lg border border-blue-100">
-                <span className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">肌龄</span>
-                <span className="block text-xl font-extrabold text-blue-600">{skinAge}<span className="text-xs font-medium ml-0.5">岁</span></span>
               </div>
             </div>
 
@@ -292,12 +281,12 @@ export default function SkinRecordResult({
                     cy="50"
                     fill="none"
                     r="40"
-                    stroke={uvIndex <= 2 ? '#FFA500' : uvIndex <= 5 ? '#FF6B00' : '#FF0000'}
+                    stroke={uvIndex <= 3 ? '#FFA500' : uvIndex <= 6 ? '#FF6B00' : '#FF0000'}
                     strokeDasharray="251.2"
                     strokeLinecap="round"
                     strokeWidth="8"
                     initial={{ strokeDashoffset: 251.2 }}
-                    animate={{ strokeDashoffset: 251.2 - (251.2 * (uvIndex / 11)) }}
+                    animate={{ strokeDashoffset: 251.2 - (251.2 * ((uvIndex - 1) / 9)) }}
                     transition={{ duration: 0.5, ease: "easeOut" }}
                   />
                 </svg>
@@ -312,7 +301,7 @@ export default function SkinRecordResult({
                     {uvIndex}
                   </motion.span>
                   <span className="text-[10px] font-bold text-orange-500">
-                    {uvIndex <= 2 ? '弱' : uvIndex <= 5 ? '中' : '强'}
+                    {uvIndex <= 3 ? '弱' : uvIndex <= 6 ? '中' : '强'}
                   </span>
                 </div>
               </div>
@@ -321,30 +310,30 @@ export default function SkinRecordResult({
               <div className="flex-1 ml-4 space-y-3">
                 <input
                   type="range"
-                  min="0"
-                  max="11"
+                  min="1"
+                  max="10"
                   step="1"
                   value={uvIndex}
                   onChange={(e) => setUvIndex(Number(e.target.value))}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
                 <div className="flex justify-between text-[10px] text-gray-400">
-                  <span>0</span>
+                  <span>1</span>
                   <span>5</span>
-                  <span>11</span>
+                  <span>10</span>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                    <span className="text-xs font-medium text-gray-700">低强度 (0-2)</span>
+                    <span className="text-xs font-medium text-gray-700">低强度 (1-3)</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-orange-500"></div>
-                    <span className="text-xs font-medium text-gray-700">中强度 (3-5)</span>
+                    <span className="text-xs font-medium text-gray-700">中强度 (4-6)</span>
                   </div>
                   <div className="flex items-center space-x-2">
                     <div className="w-2 h-2 rounded-full bg-red-500"></div>
-                    <span className="text-xs font-medium text-gray-700">高强度 (6+)</span>
+                    <span className="text-xs font-medium text-gray-700">高强度 (7-10)</span>
                   </div>
                 </div>
               </div>

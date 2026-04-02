@@ -1,18 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Plus, X, ArrowLeft, Image as ImageIcon, Loader2, Check, 
+  Plus, X, Image as ImageIcon, Loader2, Check, 
   MapPin, Hash, Eye, EyeOff, ChevronDown, FileText 
 } from 'lucide-react';
 import { Page } from '../../types';
 import { createPost, uploadImage, getSkinRecords, SkinRecord } from '../../api/community';
+import BackButton from '../../components/common/BackButton';
 
 // 发布区域选项 - 与社区导航一致
 const POST_REGIONS = {
-  all: {
-    name: '全部',
-    subCategories: ['推荐', '热门', '最新']
-  },
   skin: {
     name: '皮肤病',
     subCategories: ['湿疹', '痤疮', '皮炎', '荨麻疹', '银屑病', '白癜风', '带状疱疹', '真菌感染', '皮肤瘙痒', '皮肤过敏']
@@ -36,11 +33,13 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [images, setImages] = useState<string[]>([]);
-  const [selectedMainCategory, setSelectedMainCategory] = useState<'all' | 'skin' | 'wound' | 'whitening'>('all');
+  const [selectedMainCategory, setSelectedMainCategory] = useState<'skin' | 'wound' | 'whitening'>('skin');
   const [selectedSubCategory, setSelectedSubCategory] = useState<string | null>(null);
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [location, setLocation] = useState('');
   const [selectedSkinRecord, setSelectedSkinRecord] = useState<SkinRecord | null>(null);
+  const [customTags, setCustomTags] = useState<string[]>([]);
+  const [newTagInput, setNewTagInput] = useState('');
   
   // UI状态
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +51,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const tagInputRef = useRef<HTMLInputElement>(null);
 
   // 加载皮肤报告
   useEffect(() => {
@@ -108,6 +108,36 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
     setImages(prev => prev.filter((_, i) => i !== index));
   };
 
+  // 添加自定义标签
+  const addCustomTag = () => {
+    const tag = newTagInput.trim();
+    if (!tag) return;
+    if (customTags.includes(tag)) {
+      setError('该标签已存在');
+      return;
+    }
+    if (customTags.length >= 5) {
+      setError('最多只能添加5个自定义标签');
+      return;
+    }
+    setCustomTags(prev => [...prev, tag]);
+    setNewTagInput('');
+    setError(null);
+  };
+
+  // 删除自定义标签
+  const removeCustomTag = (index: number) => {
+    setCustomTags(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // 处理标签输入回车
+  const handleTagKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomTag();
+    }
+  };
+
   // 提交表单
   const handleSubmit = async () => {
     if (!title.trim()) {
@@ -131,6 +161,11 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
     setError(null);
 
     try {
+      const allTags = [
+        ...(selectedSubCategory ? [selectedSubCategory] : []),
+        ...customTags
+      ];
+      
       const result = await createPost({
         title: title.trim(),
         content: content.trim(),
@@ -140,6 +175,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
         mainCategory: selectedMainCategory,
         subCategory: selectedSubCategory,
         location: location || undefined,
+        tags: allTags,
       });
 
       if (result.success) {
@@ -162,13 +198,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white px-4 py-3 pt-6 border-b border-gray-100">
         <div className="flex items-center justify-between">
-          <motion.button 
-            onClick={() => onNavigate('community')} 
-            whileTap={{ scale: 0.95 }}
-            className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600"
-          >
-            <ArrowLeft size={20} />
-          </motion.button>
+          <BackButton onClick={() => onNavigate('community')} />
           <h1 className="text-lg font-bold text-gray-900">发布帖子</h1>
           <motion.button 
             onClick={handleSubmit}
@@ -208,7 +238,7 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
         >
           {/* 一级分类 */}
           <div className="flex gap-2 mb-3">
-            {(Object.keys(POST_REGIONS) as Array<'all' | 'skin' | 'wound' | 'whitening'>).map((key) => (
+            {(Object.keys(POST_REGIONS) as Array<'skin' | 'wound' | 'whitening'>).map((key) => (
               <motion.button
                 key={key}
                 whileTap={{ scale: 0.98 }}
@@ -268,6 +298,69 @@ export const CreatePost: React.FC<CreatePostProps> = ({ onNavigate }) => {
           />
           <div className="text-right text-xs text-gray-300 mt-1">
             {title.length}/100
+          </div>
+        </motion.div>
+
+        {/* 话题标签 */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.075 }}
+          className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 mb-3"
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <Hash size={16} className="text-gray-400" />
+            <span className="text-xs font-medium text-gray-500">话题标签</span>
+            <span className="text-xs text-gray-400">{customTags.length + (selectedSubCategory ? 1 : 0)}/6</span>
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            {/* 默认话题（选择的分类） */}
+            {selectedSubCategory && (
+              <span className="px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-full flex items-center gap-1.5">
+                {selectedSubCategory}
+              </span>
+            )}
+            
+            {/* 自定义标签 */}
+            {customTags.map((tag, index) => (
+              <span 
+                key={index}
+                className="px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full flex items-center gap-1.5"
+              >
+                {tag}
+                <button 
+                  onClick={() => removeCustomTag(index)}
+                  className="hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+                >
+                  <X size={12} />
+                </button>
+              </span>
+            ))}
+            
+            {/* 添加标签输入框 */}
+            {customTags.length < 5 && (
+              <div className="flex items-center gap-2">
+                <input
+                  ref={tagInputRef}
+                  type="text"
+                  value={newTagInput}
+                  onChange={(e) => setNewTagInput(e.target.value)}
+                  onKeyPress={handleTagKeyPress}
+                  placeholder="添加话题..."
+                  maxLength={20}
+                  className="w-24 px-3 py-1.5 bg-gray-50 text-xs text-gray-600 rounded-full border-none focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-gray-400"
+                />
+                {newTagInput.trim() && (
+                  <button
+                    onClick={addCustomTag}
+                    className="px-3 py-1.5 bg-blue-500 text-white text-xs font-medium rounded-full hover:bg-blue-600 transition-colors"
+                  >
+                    添加
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </motion.div>
 
