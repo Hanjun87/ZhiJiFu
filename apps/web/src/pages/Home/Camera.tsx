@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
-import { ArrowLeft, Flashlight, Image as ImageIcon, RefreshCw, ScanLine, ClipboardList, ChevronDown, Plus, FileText, Zap } from 'lucide-react';
+import { Flashlight, Image as ImageIcon, RefreshCw, ScanLine, ClipboardList, ChevronDown, Plus, FileText, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Page } from '../../types';
+import BackButton from '../../components/common/BackButton';
 
 // 模拟档案数据
 const MOCK_RECORDS = [
@@ -81,13 +82,7 @@ export default function Camera({
     <div className="fixed inset-0 bg-black z-50 flex flex-col">
       {/* 顶部导航栏 */}
       <div className="absolute top-0 left-0 right-0 z-20 px-4 pt-12 pb-4 flex items-center justify-between bg-gradient-to-b from-black/50 to-transparent">
-        <motion.button 
-          onClick={() => onNavigate('home')} 
-          whileTap={{ scale: 0.9 }}
-          className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center text-white"
-        >
-          <ArrowLeft size={22} />
-        </motion.button>
+        <BackButton onClick={() => onNavigate('home')} className="bg-white/10 backdrop-blur-md text-white" />
         
         {/* 模式指示器 */}
         <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md">

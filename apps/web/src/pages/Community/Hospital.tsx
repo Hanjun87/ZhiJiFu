@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, Calendar, Search, Star, Clock, Video } from 'lucide-react';
+import { MessageSquare, Calendar, Search, Star, Clock, Video, Users } from 'lucide-react';
 import { Page } from '../../types';
 import { MOCK_USERS } from './constants';
 
@@ -75,30 +75,50 @@ export const Hospital = ({ onNavigate, onSwitchToCommunity }: HospitalProps) => 
       {/* 顶部背景装饰 */}
       <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-blue-500/10 via-blue-500/5 to-transparent pointer-events-none" />
       
-      {/* Header - 只固定社区/医院标签 */}
+      {/* Header - 整体居中布局 */}
       <header className="sticky top-0 z-10 px-5 py-3 pt-6">
-        <div className="flex items-center justify-between">
-          {/* Tab Switcher - 胶囊按钮风格 */}
-          <div className="flex-1 flex items-center justify-center">
-            <div className="flex bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100">
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={onSwitchToCommunity}
-                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all text-gray-500 hover:bg-gray-50"
-              >
-                社区
-              </motion.button>
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-blue-500 text-white shadow-md shadow-blue-500/25"
-              >
-                医院
-              </motion.button>
-            </div>
+        <div className="flex items-center justify-center">
+          {/* 左侧占位，保持对称 */}
+          <div className="flex items-center gap-2 w-[84px]">
+            <div className="w-10 h-10" />
+            <div className="w-10 h-10" />
+          </div>
+          
+          {/* Tab Switcher - 胶囊按钮风格 - 居中 */}
+          <div className="flex bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-100">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={onSwitchToCommunity}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all text-gray-500 hover:bg-gray-50"
+            >
+              社区
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              className="px-6 py-2.5 rounded-xl text-sm font-semibold transition-all bg-blue-500 text-white shadow-md shadow-blue-500/25"
+            >
+              医院
+            </motion.button>
           </div>
 
-          {/* 占位元素，保持与社区页面对齐 */}
-          <div className="ml-3 w-10 h-10" />
+          {/* 右侧按钮组 */}
+          <div className="flex items-center gap-2 w-[100px] justify-end">
+            {/* 通讯录按钮 */}
+            <motion.button
+              onClick={() => onNavigate('community_contacts')}
+              whileTap={{ scale: 0.95 }}
+              className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-600 shadow-sm border border-gray-100 hover:bg-gray-50 transition-colors relative shrink-0"
+            >
+              <Users size={20} />
+              {/* 未读消息红点 */}
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center text-white text-[10px] font-bold">
+                3
+              </span>
+            </motion.button>
+            
+            {/* 占位按钮，保持与社区页面对齐 */}
+            <div className="w-10 h-10 shrink-0" />
+          </div>
         </div>
       </header>
 

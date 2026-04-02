@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Globe, Bell, Moon, ChevronRight, Check, Volume2, MessageCircle, Calendar } from 'lucide-react';
+import { Globe, Bell, Moon, ChevronRight, Check, Volume2, MessageCircle, Calendar } from 'lucide-react';
 import { Page } from '../../types';
+import BackButton from '../../components/common/BackButton';
 
 interface SettingsProps {
   onBack: () => void;
@@ -36,14 +37,9 @@ export default function Settings({ onBack }: SettingsProps) {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
         <div className="flex items-center justify-between">
-          <button 
-            onClick={onBack} 
-            className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <ArrowLeft size={18} />
-          </button>
+          <BackButton onClick={onBack} />
           <h1 className="text-lg font-bold text-gray-900">设置</h1>
-          <div className="w-9" />
+          <div className="w-10" />
         </div>
       </header>
 
@@ -244,65 +240,49 @@ function LanguageModal({ languages, currentLanguage, onSelect, onClose }: Langua
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
       onClick={onClose}
     >
       {/* 背景遮罩 */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-      
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
       {/* 弹窗内容 */}
       <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl overflow-hidden"
+        className="relative w-full max-w-[280px] bg-white rounded-2xl shadow-2xl overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        {/* 拖动条 */}
-        <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-gray-200" />
-        </div>
-        
         {/* 标题 */}
-        <div className="px-5 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-900 text-center">选择语言</h2>
+        <div className="px-4 py-3 border-b border-gray-100">
+          <h2 className="text-sm font-bold text-gray-900 text-center">选择语言</h2>
         </div>
 
         {/* 语言列表 */}
-        <div className="p-2">
-          {languages.map((lang) => (
+        <div className="p-1">
+          {languages.map((lang, index) => (
             <button
               key={lang.code}
               onClick={() => onSelect(lang.code)}
               className={`
-                w-full flex items-center justify-between p-4 rounded-xl transition-colors
+                w-full flex items-center justify-between px-3 py-2.5 rounded-lg transition-colors
                 ${currentLanguage === lang.code ? 'bg-blue-50' : 'hover:bg-gray-50'}
+                ${index !== languages.length - 1 ? 'mb-0.5' : ''}
               `}
             >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{lang.flag}</span>
-                <span className={`font-medium ${currentLanguage === lang.code ? 'text-blue-600' : 'text-gray-700'}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-base">{lang.flag}</span>
+                <span className={`text-sm ${currentLanguage === lang.code ? 'text-blue-600 font-medium' : 'text-gray-700'}`}>
                   {lang.label}
                 </span>
               </div>
               {currentLanguage === lang.code && (
-                <div className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center">
-                  <Check size={14} className="text-white" />
-                </div>
+                <Check size={14} className="text-blue-500" />
               )}
             </button>
           ))}
-        </div>
-
-        {/* 取消按钮 */}
-        <div className="p-4 border-t border-gray-100">
-          <button
-            onClick={onClose}
-            className="w-full py-3.5 rounded-xl bg-gray-100 text-gray-700 font-bold hover:bg-gray-200 transition-colors"
-          >
-            取消
-          </button>
         </div>
       </motion.div>
     </motion.div>

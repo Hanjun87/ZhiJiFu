@@ -25,11 +25,14 @@ import { CommunityFeed } from './pages/Community/CommunityFeed';
 import { PostDetail } from './pages/Community/PostDetail';
 import { ExpertColumn } from './pages/Community/ExpertColumn';
 import { CreatePost } from './pages/Community/CreatePost';
+import { Contacts } from './pages/Community/Contacts';
+import { Chat } from './pages/Community/Chat';
 import { Page, Record as SkinRecord, AnalysisResult } from './types';
 import { BottomNav } from './components/common/BottomNav';
-import { MessageSquare, Calendar, Settings, ArrowLeft } from 'lucide-react';
+import { MessageSquare, Calendar, Settings } from 'lucide-react';
 import { cn } from './lib/utils';
-import { getPageTransition, isTabPage, pagePresenceMode, resolveTransition } from './lib/transitions';
+import { getPageTransition, pagePresenceMode, resolveTransition } from './lib/transitions';
+import BackButton from './components/common/BackButton';
 
 // --- Main App ---
 
@@ -37,6 +40,7 @@ export default function App() {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
   const buildApiUrl = (path: string) => `${apiBaseUrl}${path}`;
   const primaryTabs: Page[] = ['home', 'records', 'community', 'profile'];
+  const isTabPage = (page: Page) => primaryTabs.includes(page);
   const pageRootMap: Record<Page, Page> = {
     home: 'home',
     camera: 'home',
@@ -49,6 +53,8 @@ export default function App() {
     community_post_detail: 'community',
     community_expert: 'community',
     community_create: 'community',
+    community_contacts: 'community',
+    community_chat: 'community',
     hospital: 'community',
     profile: 'profile',
     profile_edit: 'profile',
@@ -65,7 +71,13 @@ export default function App() {
   const reducedMotion = useReducedMotion();
   const [transitionState, setTransitionState] = useState(() => resolveTransition('home', 'home'));
 
-  const getRootTab = (page: Page) => pageRootMap[page] ?? 'home';
+  const getRootTab = (page: Page) => {
+    // 对于帖子详情页面，根据来源决定根标签页
+    if (page === 'community_post_detail') {
+      return previousPage === 'profile' ? 'profile' : 'community';
+    }
+    return pageRootMap[page] ?? 'home';
+  };
 
   const setCurrentPage = (page: Page) => {
     if (page === currentPage) {
@@ -304,7 +316,7 @@ export default function App() {
       );
     }
     if (page === 'community') {
-      return <CommunityFeed onNavigate={setCurrentPage} />;
+      return <CommunityFeed onNavigate={setCurrentPage} initialTab={currentPage === 'hospital' ? 'hospital' : 'community'} />;
     }
     return <ProfilePage onNavigate={setCurrentPage} />;
   };
@@ -362,10 +374,10 @@ export default function App() {
       );
     }
     if (currentPage === 'record_detail') {
-      return <RecordDetailPage record={selectedRecord} onBack={() => setCurrentPage('records')} />;
+      return <RecordDetailPage record={selectedRecord} onBack={() => setCurrentPage('records')} onNavigate={setCurrentPage} />;
     }
     if (currentPage === 'diary_detail') {
-      return <DiaryDetailPage entry={selectedDiaryEntry} onBack={() => setCurrentPage('records')} />;
+      return <DiaryDetailPage entry={selectedDiaryEntry} onBack={() => setCurrentPage('records')} onNavigate={setCurrentPage} />;
     }
 
     if (currentPage === 'history') {
@@ -389,14 +401,9 @@ export default function App() {
           {/* Header */}
           <header className="sticky top-0 z-10 bg-white px-5 py-3 pt-6">
             <div className="flex items-center justify-between">
-              <button 
-                onClick={() => setCurrentPage('profile')} 
-                className="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-              >
-                <ArrowLeft size={18} />
-              </button>
+              <BackButton onClick={() => setCurrentPage('profile')} />
               <h1 className="text-lg font-bold text-gray-900">关于应用</h1>
-              <div className="w-9" />
+              <div className="w-10" />
             </div>
           </header>
 
@@ -424,6 +431,12 @@ export default function App() {
     }
     if (currentPage === 'community_expert') {
       return <ExpertColumn onNavigate={setCurrentPage} />;
+    }
+    if (currentPage === 'community_contacts') {
+      return <Contacts onNavigate={setCurrentPage} />;
+    }
+    if (currentPage === 'community_chat') {
+      return <Chat onNavigate={setCurrentPage} backTo="community_contacts" />;
     }
     return <CreatePost onNavigate={setCurrentPage} />;
   };
@@ -460,7 +473,11 @@ export default function App() {
             {renderPrimaryTab(page)}
           </motion.div>
         ))}
-        <AnimatePresence mode="sync" initial={false}>
+        {/* Overlay 背景遮罩 - 防止页面切换时看到底层内容 */}
+        {overlayPageVisible && (
+          <div className="absolute inset-0 z-10 bg-gray-50" />
+        )}
+        <AnimatePresence mode="popLayout" initial={false}>
           {overlayPageVisible && (
             <motion.div
               key={currentPage}

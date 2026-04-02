@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { ChevronRight, Eye, Calendar, Clock } from 'lucide-react';
+import { ChevronRight, Eye, Clock } from 'lucide-react';
 import { Record as SkinRecord } from '../../types';
 import { cn } from '../../lib/utils';
 
@@ -16,7 +16,8 @@ const SAMPLE_RECORDS = [
   {
     id: '1',
     title: "过敏性皮炎",
-    date: "2023年10月24日 · 下午 2:30",
+    date: "10月24日",
+    time: "14:30",
     status: "恢复中" as const,
     statusColor: "bg-emerald-100 text-emerald-700",
     image: "https://picsum.photos/seed/skin1/200/200",
@@ -24,7 +25,8 @@ const SAMPLE_RECORDS = [
   {
     id: '2',
     title: "轻微擦伤",
-    date: "2023年10月18日 · 上午 10:15",
+    date: "10月18日",
+    time: "10:15",
     status: "待复查" as const,
     statusColor: "bg-blue-100 text-blue-700",
     image: "https://picsum.photos/seed/skin2/200/200",
@@ -35,7 +37,8 @@ const OLDER_RECORDS = [
   {
     id: '3',
     title: "慢性湿疹",
-    date: "2023年09月05日 · 下午 4:50",
+    date: "09月05日",
+    time: "16:50",
     status: "已结束" as const,
     statusColor: "bg-gray-100 text-gray-600",
     image: "https://picsum.photos/seed/skin3/200/200",
@@ -47,7 +50,7 @@ const SAMPLE_DIARY_ENTRIES = [
   {
     id: '1',
     date: "01月15日",
-    time: "上午 9:30",
+    time: "09:30",
     title: "今日皮肤状况",
     status: "良好" as const,
     image: "https://picsum.photos/seed/diary1/200/200",
@@ -55,7 +58,7 @@ const SAMPLE_DIARY_ENTRIES = [
   {
     id: '2',
     date: "01月14日",
-    time: "下午 6:15",
+    time: "18:15",
     title: "晒后修复记录",
     status: "恢复中" as const,
     image: "https://picsum.photos/seed/diary2/200/200",
@@ -66,7 +69,7 @@ const OLDER_DIARY_ENTRIES = [
   {
     id: '3',
     date: "01月10日",
-    time: "晚上 8:00",
+    time: "20:00",
     title: "冬季保湿打卡",
     status: "已结束" as const,
     image: "https://picsum.photos/seed/diary3/200/200",
@@ -82,11 +85,7 @@ export default function Records({
 }: RecordsProps) {
   const [currentTab, setCurrentTab] = useState<'records' | 'diary'>(activeTab);
 
-  const allRecords = records.length > 0 ? records : SAMPLE_RECORDS.map(r => ({
-    ...r,
-    probability: 0.85,
-    typicalImage: r.image,
-  }));
+
 
   const statusColorMap: Record<string, string> = {
     '恢复中': 'bg-emerald-100 text-emerald-700',
@@ -143,8 +142,13 @@ export default function Records({
                 transition={{ duration: 0.28 }}
                 className="space-y-4"
               >
-                {allRecords.slice(0, 2).map((record) => (
-                  <RecordCard key={record.id} record={record} onSelect={onSelect} />
+                {SAMPLE_RECORDS.map((record) => (
+                  <RecordCard 
+                    key={record.id} 
+                    record={record} 
+                    statusColorMap={statusColorMap}
+                    onSelect={onSelect} 
+                  />
                 ))}
               </motion.div>
             </section>
@@ -157,17 +161,11 @@ export default function Records({
                 transition={{ duration: 0.28, delay: 0.06 }}
                 className="space-y-4"
               >
-                {allRecords.slice(2).map((record) => (
-                  <RecordCard key={record.id} record={record} onSelect={onSelect} />
-                ))}
                 {OLDER_RECORDS.map((record) => (
                   <RecordCard 
                     key={record.id} 
-                    record={{
-                      ...record,
-                      probability: 0.75,
-                      typicalImage: record.image,
-                    }} 
+                    record={record}
+                    statusColorMap={statusColorMap}
                     onSelect={onSelect} 
                   />
                 ))}
@@ -257,20 +255,15 @@ const DiaryCard: React.FC<DiaryCardProps> = ({ entry, statusColorMap, onClick })
       <span className="text-lg font-bold text-blue-600">{entry.date.split('月')[1].replace('日', '')}</span>
       <span className="text-[10px] text-blue-400">{entry.date.split('月')[0]}月</span>
     </div>
-    
+
     <div className="flex-1 min-w-0">
-      {/* 第一行：日期 + 时间 */}
       <div className="flex items-center gap-2 mb-1">
-        <Calendar size={12} className="text-gray-400" />
-        <span className="text-sm font-bold text-gray-900">{entry.date}</span>
-        <span className="text-xs text-gray-400">·</span>
         <Clock size={12} className="text-gray-400" />
         <span className="text-xs text-gray-500">{entry.time}</span>
       </div>
-      
-      {/* 第二行：描述 */}
-      <p className="text-sm text-gray-600 mb-2 truncate">{entry.title}</p>
-      
+
+      <p className="text-base font-bold text-gray-900 mb-2 truncate">{entry.title}</p>
+
       {/* 第三行：状态标签 */}
       <div className="flex items-center gap-2">
         <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-medium", statusColorMap[entry.status] || 'bg-gray-100 text-gray-600')}>
@@ -282,63 +275,80 @@ const DiaryCard: React.FC<DiaryCardProps> = ({ entry, statusColorMap, onClick })
         </span>
       </div>
     </div>
-    
+
     {/* 右侧图片 */}
     <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
-      <img 
-        src={entry.image} 
-        alt={entry.title} 
-        className="w-full h-full object-cover" 
-        referrerPolicy="no-referrer" 
+      <img
+        src={entry.image}
+        alt={entry.title}
+        className="w-full h-full object-cover"
+        referrerPolicy="no-referrer"
       />
     </div>
-    
+
     <ChevronRight size={20} className="text-gray-300 shrink-0" />
   </motion.button>
 );
 
 interface RecordCardProps {
-  record: SkinRecord & { statusColor?: string };
-  onSelect: (r: SkinRecord) => void;
+  record: {
+    id: string;
+    title: string;
+    date: string;
+    time: string;
+    status: string;
+    image: string;
+  };
+  statusColorMap: Record<string, string>;
+  onSelect: (r: any) => void;
 }
 
-const RecordCard: React.FC<RecordCardProps> = ({ record, onSelect }) => {
-  const statusColorMap: Record<string, string> = {
-    '恢复中': 'bg-emerald-100 text-emerald-700',
-    '待复查': 'bg-blue-100 text-blue-700',
-    '已结束': 'bg-gray-100 text-gray-600',
-  };
+const RecordCard: React.FC<RecordCardProps> = ({ record, statusColorMap, onSelect }) => (
+  <motion.button
+    onClick={() => onSelect(record)}
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    whileHover={{ y: -2, scale: 1.01 }}
+    whileTap={{ scale: 0.99 }}
+    transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+    className="w-full flex items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+  >
+    {/* 日期显示 - 左侧 */}
+    <div className="flex flex-col items-center justify-center w-14 h-14 bg-blue-50 rounded-xl shrink-0">
+      <span className="text-lg font-bold text-blue-600">{record.date.split('月')[1].replace('日', '')}</span>
+      <span className="text-[10px] text-blue-400">{record.date.split('月')[0]}月</span>
+    </div>
 
-  return (
-    <motion.button
-      onClick={() => onSelect(record)}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -2, scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="w-full flex items-center gap-4 rounded-2xl bg-white p-4 text-left shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
-    >
-      <img 
-        src={record.image} 
-        alt={record.title} 
-        className="w-16 h-16 rounded-xl object-cover bg-gray-100" 
-        referrerPolicy="no-referrer" 
-      />
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start mb-1.5">
-          <h4 className="font-bold text-gray-900 truncate">{record.title}</h4>
-          <span className={cn("text-[10px] px-2.5 py-1 rounded-full font-bold", statusColorMap[record.status] || 'bg-gray-100 text-gray-600')}>
-            {record.status}
-          </span>
-        </div>
-        <p className="text-xs text-gray-400 mb-2">{record.date}</p>
-        <div className="flex items-center gap-1.5 text-blue-600 text-xs font-semibold">
-          <Eye size={14} />
-          <span>查看报告</span>
-        </div>
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2 mb-1">
+        <Clock size={12} className="text-gray-400" />
+        <span className="text-xs text-gray-500">{record.time}</span>
       </div>
-      <ChevronRight size={20} className="text-gray-300" />
-    </motion.button>
-  );
-};
+
+      <p className="text-base font-bold text-gray-900 mb-2 truncate">{record.title}</p>
+
+      {/* 第三行：状态标签 */}
+      <div className="flex items-center gap-2">
+        <span className={cn("text-[10px] px-2 py-0.5 rounded-full font-medium", statusColorMap[record.status] || 'bg-gray-100 text-gray-600')}>
+          {record.status}
+        </span>
+        <span className="text-[10px] text-blue-600 flex items-center gap-1">
+          <Eye size={12} />
+          查看详情
+        </span>
+      </div>
+    </div>
+
+    {/* 右侧图片 */}
+    <div className="w-14 h-14 rounded-xl overflow-hidden bg-gray-100 shrink-0">
+      <img
+        src={record.image}
+        alt={record.title}
+        className="w-full h-full object-cover"
+        referrerPolicy="no-referrer"
+      />
+    </div>
+
+    <ChevronRight size={20} className="text-gray-300 shrink-0" />
+  </motion.button>
+);

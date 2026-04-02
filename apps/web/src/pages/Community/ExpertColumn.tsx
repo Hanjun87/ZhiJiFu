@@ -1,7 +1,8 @@
 import React from 'react';
-import { Search, MessageCircle, Plus, ArrowLeft } from 'lucide-react';
+import { Search, MessageCircle, Plus } from 'lucide-react';
 import { MOCK_USERS, MOCK_ARTICLES } from './constants';
 import { Page } from '../../types';
+import BackButton from '../../components/common/BackButton';
 
 export const ExpertColumn = ({ onNavigate }: { onNavigate: (p: Page) => void }) => {
   const experts = [MOCK_USERS.doctor_lin, MOCK_USERS.prof_zhang];
@@ -11,9 +12,7 @@ export const ExpertColumn = ({ onNavigate }: { onNavigate: (p: Page) => void }) 
       <header className="sticky top-0 left-0 right-0 bg-white/80 backdrop-blur-xl z-50 px-6 py-3 flex flex-col gap-4 shadow-sm pt-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button onClick={() => onNavigate('community')} className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 active:scale-95 transition-transform">
-              <ArrowLeft size={20} />
-            </button>
+            <BackButton onClick={() => onNavigate('community')} />
             <h1 className="text-xl font-bold text-gray-900">皮肤健康社区</h1>
           </div>
           <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
