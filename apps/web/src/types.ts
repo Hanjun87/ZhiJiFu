@@ -1,4 +1,4 @@
-export type Page = 'home' | 'camera' | 'analysis' | 'result' | 'records' | 'record_detail' | 'profile' | 'consultations' | 'appointments' | 'settings' | 'about' | 'community' | 'community_post_detail' | 'community_expert' | 'community_create' | 'history' | 'hospital' | 'profile_edit' | 'skin_record_analysis' | 'skin_record_result' | 'diary_detail';
+export type Page = 'home' | 'camera' | 'analysis' | 'result' | 'records' | 'record_detail' | 'profile' | 'consultations' | 'appointments' | 'settings' | 'about' | 'community' | 'community_post_detail' | 'community_expert' | 'community_create' | 'history' | 'hospital' | 'profile_edit' | 'skin_record_analysis' | 'skin_record_result' | 'diary_detail' | 'disease_trend_test';
 
 export interface Record {
   id: string;
@@ -8,6 +8,12 @@ export interface Record {
   image: string;
   probability: number;
   typicalImage: string;
+  recoveryProgress?: {
+    recoveryPercent: number;
+    estimatedDaysToFullRecovery: number;
+    startedAt: string;
+    progressChanged: 'improving' | 'stable' | 'concerning' | 'uncertain';
+  };
 }
 
 export interface AnalysisResult {

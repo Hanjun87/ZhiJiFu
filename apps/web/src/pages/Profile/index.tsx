@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Settings, Grid3X3, Bookmark, Heart, MessageCircle, Camera, MapPin, Link2, ChevronRight } from 'lucide-react';
+import { Settings, Grid3X3, Bookmark, Heart, MessageCircle, Camera, MapPin, Link2, ChevronRight, FlaskConical } from 'lucide-react';
 import { Page } from '../../types';
 
 // 模拟用户发布的帖子数据 - 两列瀑布流，不同高度
@@ -163,14 +163,25 @@ export default function Profile({ onNavigate }: { onNavigate: (p: Page) => void 
           <div className="w-2 h-2 rounded-full bg-blue-500" />
           <span className="text-sm font-medium text-gray-600">个人主页</span>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.05, rotate: 15 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => onNavigate('settings')}
-          className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-gray-600 hover:text-blue-500 hover:border-blue-200 transition-colors"
-        >
-          <Settings size={20} />
-        </motion.button>
+        <div className="flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate('disease_trend_test')}
+            className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 hover:bg-purple-200 transition-colors"
+            title="疾病趋势Agent测试"
+          >
+            <FlaskConical size={20} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05, rotate: 15 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate('settings')}
+            className="w-10 h-10 rounded-xl bg-white shadow-sm border border-gray-100 flex items-center justify-center text-gray-600 hover:text-blue-500 hover:border-blue-200 transition-colors"
+          >
+            <Settings size={20} />
+          </motion.button>
+        </div>
       </header>
 
       {/* 用户信息卡片 */}

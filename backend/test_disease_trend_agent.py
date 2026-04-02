@@ -272,6 +272,7 @@ def test_workflow_with_mock_data():
             "rag_context": None,
             "final_verdict": None,
             "final_report": None,
+            "recovery_progress": None,
             "alerts": [],
             "needs_doctor": False
         }
@@ -307,6 +308,11 @@ def test_workflow_with_mock_data():
                     summary = report.get("executive_summary", {})
                     print(f"\n执行摘要:")
                     print(f"  下一步行动: {summary.get('next_action', 'N/A')}")
+                    recovery = summary.get("recovery_progress", {})
+                    if recovery:
+                        print(f"  恢复进度: {recovery.get('recovery_percent', 0)}%")
+                        print(f"  预计完全恢复: {recovery.get('estimated_days_to_full_recovery', 'N/A')}天")
+                        print(f"  进度趋势: {recovery.get('progress_changed', 'N/A')}")
 
             if result.get("alerts"):
                 print(f"\n告警信息:")

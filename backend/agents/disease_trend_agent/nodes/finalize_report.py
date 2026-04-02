@@ -2,50 +2,58 @@
 报告生成节点
 """
 
-from datetime import datetime
-from typing import Dict, Any
+from datetime import datetime, timedelta
+from typing import Dict, Any, Literal, List, Optional
 from ..core.state import DiseaseTrackingState
 from ..utils.report_renderer import ReportRenderer
+from ..utils.recovery_calculator import calculate_recovery_progress, calculator
 
 
 def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
     """
     组装最终报告
-    
+
     Args:
         state: 当前状态
-        
+
     Returns:
         更新后的状态
     """
     indicators = state.get("trend_indicators", {})
     agent_decision = state.get("agent_decision", {})
     rag_context = state.get("rag_context")
-    
-    # 确定最终结论
+    raw_records = state.get("raw_records", [])
+    user_profile = state.get("user_profile")
+
     suggested_verdict = agent_decision.get("suggested_verdict")
     if suggested_verdict:
         final_verdict = suggested_verdict
     else:
-        # 根据指标自动判断
         final_verdict = _determine_verdict(indicators)
-    
+
     state["final_verdict"] = final_verdict
-    
-    # 生成报告
+
+    recovery_progress = calculate_recovery_progress(
+        records=raw_records,
+        time_window_days=state.get("time_window_days", 30),
+        user_profile=user_profile
+    )
+    state["recovery_progress"] = recovery_progress
+
     renderer = ReportRenderer()
     report = renderer.render({
         "report_type": "disease_trend_30d",
         "generated_at": datetime.now().isoformat(),
         "executive_summary": {
             "verdict": final_verdict,
-            "confidence": agent_decision.get("confidence", 0.0),
+            "confidence": agent_decision.get("confidence", 0.0) or recovery_progress.get("confidence", 0.0),
             "risk_level": agent_decision.get("risk_level", "low"),
-            "next_action": _generate_next_action(final_verdict, agent_decision)
+            "next_action": _generate_next_action(final_verdict, agent_decision),
+            "recovery_progress": recovery_progress
         },
         "trend_analysis": {
             "duration_days": state["time_window_days"],
-            "photos_count": len(state.get("raw_records", [])),
+            "photos_count": len(raw_records),
             "severity_progression": indicators.get("severity_timeline", []),
             "key_improvements": _extract_improvements(indicators),
             "remaining_issues": _extract_remaining_issues(indicators)
@@ -57,14 +65,14 @@ def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
         },
         "comparison_with_history": {
             "similar_cases_found": len(rag_context.get("similar_cases", [])) if rag_context else 0,
-            "recovery_speed_percentile": None  # TODO: 计算恢复速度百分位
+            "recovery_speed_percentile": None
         },
         "alerts": state.get("alerts", []),
         "doctor_review_required": state.get("needs_doctor", False)
     })
-    
+
     state["final_report"] = report
-    
+
     return state
 
 

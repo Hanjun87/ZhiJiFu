@@ -42,6 +42,7 @@ app.use(express.json({ limit: '12mb' }));
 app.get('/api/health', (req, res) => proxyJson(req, res, '/api/health'));
 app.post('/api/analyze-skin', (req, res) => proxyJson(req, res, '/api/analyze-skin'));
 app.post('/api/analyze-skin-record', (req, res) => proxyJson(req, res, '/api/analyze-skin-record'));
+app.post('/api/disease-trend-analysis', (req, res) => proxyJson(req, res, '/api/disease-trend-analysis'));
 app.get('/api/admin/ai/providers', (req, res) => proxyJson(req, res, '/api/admin/ai/providers'));
 app.get('/api/admin/ai/config', (req, res) => proxyJson(req, res, '/api/admin/ai/config'));
 app.put('/api/admin/ai/config', (req, res) => proxyJson(req, res, '/api/admin/ai/config'));

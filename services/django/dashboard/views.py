@@ -444,7 +444,7 @@ def format_time(created_at):
     """格式化时间显示"""
     now = timezone.now()
     diff = now - created_at
-    
+
     if diff < timedelta(minutes=1):
         return '刚刚'
     elif diff < timedelta(hours=1):
@@ -455,3 +455,61 @@ def format_time(created_at):
         return f'{diff.days}天前'
     else:
         return created_at.strftime('%Y-%m-%d')
+
+
+# ==================== 疾病趋势诊断Agent API ====================
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
+
+from agents.disease_trend_agent import build_workflow, DiseaseTrackingState
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def disease_trend_analysis(request):
+    """疾病趋势诊断Agent - 基于30天数据分析病情趋势"""
+    try:
+        payload = parse_json_body(request)
+
+        user_id = payload.get('userId', 'test_user')
+        target_disease = payload.get('targetDisease', 'acne')
+        time_window_days = payload.get('timeWindowDays', 30)
+
+        initial_state: DiseaseTrackingState = {
+            "user_id": user_id,
+            "target_disease": target_disease,
+            "case_id": None,
+            "time_window_days": time_window_days,
+            "raw_records": [],
+            "user_profile": payload.get('userProfile'),
+            "trend_indicators": None,
+            "agent_decision": None,
+            "rag_context": None,
+            "final_verdict": None,
+            "final_report": None,
+            "recovery_progress": None,
+            "alerts": [],
+            "needs_doctor": False
+        }
+
+        app = build_workflow()
+        result = app.invoke(initial_state)
+
+        return JsonResponse({
+            "success": True,
+            "result": {
+                "final_verdict": result.get("final_verdict"),
+                "recovery_progress": result.get("recovery_progress"),
+                "final_report": result.get("final_report"),
+                "needs_doctor": result.get("needs_doctor"),
+                "alerts": result.get("alerts", [])
+            }
+        })
+    except ValueError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": str(exc)}, status=500)

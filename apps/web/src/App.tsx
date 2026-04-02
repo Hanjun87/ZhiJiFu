@@ -25,6 +25,7 @@ import { CommunityFeed } from './pages/Community/CommunityFeed';
 import { PostDetail } from './pages/Community/PostDetail';
 import { ExpertColumn } from './pages/Community/ExpertColumn';
 import { CreatePost } from './pages/Community/CreatePost';
+import DiseaseTrendTest from './pages/Profile/DiseaseTrendTest';
 import { Page, Record as SkinRecord, AnalysisResult } from './types';
 import { BottomNav } from './components/common/BottomNav';
 import { MessageSquare, Calendar, Settings, ArrowLeft } from 'lucide-react';
@@ -424,6 +425,9 @@ export default function App() {
     }
     if (currentPage === 'community_expert') {
       return <ExpertColumn onNavigate={setCurrentPage} />;
+    }
+    if (currentPage === 'disease_trend_test') {
+      return <DiseaseTrendTest apiBaseUrl={apiBaseUrl} onBack={() => setCurrentPage('profile')} />;
     }
     return <CreatePost onNavigate={setCurrentPage} />;
   };

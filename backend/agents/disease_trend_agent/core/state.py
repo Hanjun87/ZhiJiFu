@@ -45,5 +45,12 @@ class DiseaseTrackingState(TypedDict):
     # ========== 输出层 ==========
     final_verdict: Optional[Literal["better", "worse", "stable", "insufficient"]]
     final_report: Optional[Dict]
+    recovery_progress: Optional[Dict]
+    # {
+    #   "recovery_percent": 65,  # 0-100
+    #   "estimated_days_to_full_recovery": 14,
+    #   "started_at": "2024-01-01",
+    #   "progress_changed": "improving" | "stable" | "concerning"
+    # }
     alerts: List[str]
     needs_doctor: bool

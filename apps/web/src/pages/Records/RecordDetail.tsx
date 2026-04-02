@@ -159,18 +159,22 @@ export default function RecordDetail({ record, onBack }: RecordDetailProps) {
           <div className="bg-white rounded-2xl p-4 border border-gray-100">
             <div className="flex justify-between text-xs text-gray-500 mb-2">
               <span>开始治疗</span>
-              <span className="text-emerald-600 font-medium">65%</span>
+              <span className="text-emerald-600 font-medium">{record.recoveryProgress?.recoveryPercent ?? 65}%</span>
               <span>完全恢复</span>
             </div>
             <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
-              <motion.div 
+              <motion.div
                 initial={{ width: 0 }}
-                animate={{ width: '65%' }}
+                animate={{ width: `${record.recoveryProgress?.recoveryPercent ?? 65}%` }}
                 transition={{ duration: 1, delay: 0.3 }}
                 className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
               />
             </div>
-            <p className="text-xs text-gray-400">预计还需 2 周完全恢复</p>
+            <p className="text-xs text-gray-400">
+              {record.recoveryProgress?.estimatedDaysToFullRecovery
+                ? `预计还需 ${record.recoveryProgress.estimatedDaysToFullRecovery} 周完全恢复`
+                : '预计还需 2 周完全恢复'}
+            </p>
           </div>
         </motion.div>
 
