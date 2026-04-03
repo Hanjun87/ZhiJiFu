@@ -483,11 +483,157 @@ def format_time(created_at):
         return created_at.strftime('%Y-%m-%d')
 
 
-# ==================== 疾病趋势诊断Agent API ====================
+# ==================== AI智能医生对话API ====================
 
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
+
+from agents.disease_trend_agent.services.ai_chat_service import chat_with_ai_doctor, stream_chat_with_ai_doctor
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def ai_doctor_chat(request):
+    """AI智能医生对话接口 - 基于疾病档案历史记录回答用户问题"""
+    try:
+        # 调试：确保环境变量已设置
+        if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
+            # 手动设置 API Key（临时解决方案）
+            os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+            os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+
+        payload = parse_json_body(request)
+
+        user_id = payload.get('userId', 'user_001')
+        message = payload.get('message', '')
+        disease_context = payload.get('diseaseContext', '')
+        chat_history = payload.get('chatHistory', [])
+
+        print(f"[Django AI Chat] 用户ID: {user_id}")
+        print(f"[Django AI Chat] 消息: {message}")
+        print(f"[Django AI Chat] 疾病上下文: {disease_context}")
+        print(f"[Django AI Chat] 对话历史条数: {len(chat_history)}")
+
+        if not message:
+            return JsonResponse({"message": "消息不能为空"}, status=400)
+
+        # 优先使用前端传入的历史记录（例如疾病的档案历史记录）
+        user_records = payload.get('userRecords')
+        
+        if not user_records:
+            # 如果前端未传入，则获取用户的最新历史记录
+            end_date = timezone.now()
+            start_date = end_date - timedelta(days=30)
+    
+            db_records = SkinRecord.objects.filter(
+                created_at__gte=start_date,
+                created_at__lte=end_date
+            ).order_by('-created_at')[:10]
+    
+            print(f"[Django AI Chat] 数据库记录数: {db_records.count()}")
+    
+            user_records = []
+            for record in db_records:
+                user_records.append({
+                    "date": record.created_at.strftime('%Y-%m-%d'),
+                    "skin_overall": record.skin_overall,
+                    "skin_issues": record.skin_issues if isinstance(record.skin_issues, list) else [],
+                    "user_note": record.user_note or ""
+                })
+
+        print(f"[Django AI Chat] 传递给AI的记录数: {len(user_records) if user_records else 0}")
+        if user_records:
+            print(f"[Django AI Chat] 第一条记录: {user_records[0]}")
+
+        # 调用AI对话服务
+        result = chat_with_ai_doctor(
+            user_id=user_id,
+            message=message,
+            disease_context=disease_context,
+            chat_history=chat_history,
+            user_records=user_records
+        )
+
+        return JsonResponse({
+            "success": result.get("success", True),
+            "response": result.get("response", ""),
+            "timestamp": result.get("timestamp", timezone.now().isoformat())
+        })
+        
+    except ValueError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": str(exc)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def ai_doctor_chat_stream(request):
+    """AI智能医生流式对话接口 - 基于疾病档案历史记录回答用户问题"""
+    from django.http import StreamingHttpResponse
+    import json
+    import time
+
+    def generate():
+        try:
+            if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
+                os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+                os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+
+            payload = parse_json_body(request)
+
+            user_id = payload.get('userId', 'user_001')
+            message = payload.get('message', '')
+            disease_context = payload.get('diseaseContext', '')
+            chat_history = payload.get('chatHistory', [])
+
+            if not message:
+                yield "data: " + json.dumps({"error": "消息不能为空"}) + "\n\n"
+                return
+
+            user_records = payload.get('userRecords')
+
+            if not user_records:
+                end_date = timezone.now()
+                start_date = end_date - timedelta(days=30)
+
+                db_records = SkinRecord.objects.filter(
+                    created_at__gte=start_date,
+                    created_at__lte=end_date
+                ).order_by('-created_at')[:10]
+
+                user_records = []
+                for record in db_records:
+                    user_records.append({
+                        "date": record.created_at.strftime('%Y-%m-%d'),
+                        "skin_overall": record.skin_overall,
+                        "skin_issues": record.skin_issues if isinstance(record.skin_issues, list) else [],
+                        "user_note": record.user_note or ""
+                    })
+
+            for chunk in stream_chat_with_ai_doctor(
+                user_id=user_id,
+                message=message,
+                disease_context=disease_context,
+                chat_history=chat_history,
+                user_records=user_records
+            ):
+                yield "data: " + json.dumps({"content": chunk}) + "\n\n"
+
+            yield "data: " + json.dumps({"done": True}) + "\n\n"
+
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            yield "data: " + json.dumps({"error": str(exc)}) + "\n\n"
+
+    return StreamingHttpResponse(generate(), content_type='text/event-stream')
+
+
+# ==================== 疾病趋势诊断Agent API ====================
 
 from agents.disease_trend_agent import build_workflow, DiseaseTrackingState
 

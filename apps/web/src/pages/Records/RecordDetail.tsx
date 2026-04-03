@@ -1,17 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { 
   TrendingUp, Shield, History, Bot, Send, User, 
   Phone, FileText, X, Clock, Target, TrendingDown, Minus,
   ChevronDown, ChevronUp, Heart, Sun, Droplets, Utensils, Moon, Sparkles,
   Play, Loader2, Camera, Stethoscope, Activity
 } from 'lucide-react';
-import { Record } from '../../types';
+import { Record as SkinRecord } from '../../types';
 import BackButton from '../../components/common/BackButton';
 import { DiseaseTrendPayload, DiseaseTrendResult, CareAdviceItem } from '../../modules/skin/api';
+import { chatWithAIDoctor, ChatMessage } from '../../api/aiDoctor';
 
 interface RecordDetailProps {
-  record: Record | null;
+  record: SkinRecord | null;
   onBack: () => void;
   onNavigate?: (page: string) => void;
 }
@@ -67,116 +70,178 @@ interface HistoryRecord {
   careAdvice: { title: string; desc: string }[];
 }
 
-// 模拟历史记录数据 - 同一疾病（特应性皮炎）的不同阶段，包含检测指标
-const MOCK_HISTORY: HistoryRecord[] = [
-  { 
-    id: '1', 
-    date: '01-15', 
-    type: '复诊', 
-    result: '特应性皮炎',
-    status: '待复查',
-    probability: 85,
-    progress: 30,
-    severity: 3,
-    severityLabel: '重度',
-    lesionCount: 22,
-    affectedArea: 28,
-    confidence: 0.88,
-    careAdvice: [
-      { title: '保持清洁', desc: '每日用温水清洁患处，避免使用刺激性洗护用品' },
-      { title: '按时用药', desc: '按照医嘱涂抹药膏，不要自行增减用量' },
-      { title: '避免刺激', desc: '避免抓挠患处，穿着宽松透气的衣物' },
-    ]
-  },
-  { 
-    id: '2', 
-    date: '01-10', 
-    type: '复诊', 
-    result: '特应性皮炎',
-    status: '恢复中',
-    probability: 72,
-    progress: 55,
-    severity: 2,
-    severityLabel: '中度',
-    lesionCount: 15,
-    affectedArea: 18,
-    confidence: 0.82,
-    careAdvice: [
-      { title: '继续用药', desc: '症状有所缓解，继续按医嘱用药巩固疗效' },
-      { title: '保湿护理', desc: '加强皮肤保湿，使用温和的保湿产品' },
-      { title: '饮食注意', desc: '避免辛辣刺激食物，多吃富含维生素的蔬果' },
-    ]
-  },
-  { 
-    id: '3', 
-    date: '01-05', 
-    type: '识别', 
-    result: '特应性皮炎',
-    status: '已结束',
-    probability: 91,
-    progress: 100,
-    severity: 1,
-    severityLabel: '轻度',
-    lesionCount: 8,
-    affectedArea: 8,
-    confidence: 0.85,
-    careAdvice: [
-      { title: '预防复发', desc: '注意避免接触过敏原，保持环境清洁' },
-      { title: '定期复查', desc: '建议每月复查一次，监测皮肤状况' },
-      { title: '健康习惯', desc: '保持规律作息，增强身体免疫力' },
-    ]
-  },
-];
+// 每个疾病的独立历史记录数据
+const DISEASE_HISTORIES: Record<string, HistoryRecord[]> = {
+  '过敏性皮炎': [
+    { 
+      id: '1', 
+      date: '10-24', 
+      type: '复诊', 
+      result: '过敏性皮炎',
+      status: '恢复中',
+      probability: 88,
+      progress: 65,
+      severity: 2,
+      severityLabel: '中度',
+      lesionCount: 12,
+      affectedArea: 15,
+      confidence: 0.90,
+      careAdvice: [
+        { title: '避免过敏原', desc: '远离花粉、尘螨等常见过敏原' },
+        { title: '冷敷缓解', desc: '使用冷毛巾敷患处，缓解瘙痒' },
+        { title: '保湿修复', desc: '使用无香料保湿霜修复皮肤屏障' },
+      ]
+    },
+    { 
+      id: '2', 
+      date: '10-18', 
+      type: '识别', 
+      result: '过敏性皮炎',
+      status: '已结束',
+      probability: 92,
+      progress: 100,
+      severity: 1,
+      severityLabel: '轻度',
+      lesionCount: 5,
+      affectedArea: 6,
+      confidence: 0.88,
+      careAdvice: [
+        { title: '预防复发', desc: '记录过敏史，避免再次接触过敏原' },
+        { title: '温和清洁', desc: '使用温和无刺激的清洁产品' },
+      ]
+    },
+  ],
+  '轻微擦伤': [
+    { 
+      id: '1', 
+      date: '10-18', 
+      type: '识别', 
+      result: '轻微擦伤',
+      status: '待复查',
+      probability: 95,
+      progress: 40,
+      severity: 1,
+      severityLabel: '轻度',
+      lesionCount: 1,
+      affectedArea: 2,
+      confidence: 0.96,
+      careAdvice: [
+        { title: '清洁伤口', desc: '用生理盐水清洗伤口，保持清洁' },
+        { title: '涂抹药膏', desc: '涂抹抗菌药膏预防感染' },
+        { title: '避免碰水', desc: '伤口未愈合前尽量避免接触水' },
+      ]
+    },
+  ],
+  '慢性湿疹': [
+    { 
+      id: '1', 
+      date: '09-20', 
+      type: '复诊', 
+      result: '慢性湿疹',
+      status: '已结束',
+      probability: 85,
+      progress: 90,
+      severity: 2,
+      severityLabel: '中度',
+      lesionCount: 8,
+      affectedArea: 12,
+      confidence: 0.84,
+      careAdvice: [
+        { title: '持续保湿', desc: '慢性湿疹需要长期保湿护理' },
+        { title: '避免刺激', desc: '避免使用碱性强的清洁产品' },
+      ]
+    },
+    { 
+      id: '2', 
+      date: '09-12', 
+      type: '复诊', 
+      result: '慢性湿疹',
+      status: '恢复中',
+      probability: 78,
+      progress: 60,
+      severity: 2,
+      severityLabel: '中度',
+      lesionCount: 14,
+      affectedArea: 20,
+      confidence: 0.80,
+      careAdvice: [
+        { title: '规范用药', desc: '按医嘱使用激素药膏，不可擅自停药' },
+        { title: '控制搔抓', desc: '剪短指甲，避免搔抓加重病情' },
+      ]
+    },
+    { 
+      id: '3', 
+      date: '09-05', 
+      type: '识别', 
+      result: '慢性湿疹',
+      status: '已结束',
+      probability: 88,
+      progress: 100,
+      severity: 3,
+      severityLabel: '重度',
+      lesionCount: 25,
+      affectedArea: 35,
+      confidence: 0.86,
+      careAdvice: [
+        { title: '及时就医', desc: '重度湿疹建议及时就医治疗' },
+        { title: '湿敷疗法', desc: '遵医嘱进行湿敷治疗' },
+      ]
+    },
+  ],
+  // 默认历史记录（当疾病名称不匹配时使用）
+  'default': [
+    { 
+      id: '1', 
+      date: '01-15', 
+      type: '复诊', 
+      result: '皮肤状况',
+      status: '待复查',
+      probability: 85,
+      progress: 30,
+      severity: 2,
+      severityLabel: '中度',
+      lesionCount: 10,
+      affectedArea: 15,
+      confidence: 0.85,
+      careAdvice: [
+        { title: '保持清洁', desc: '每日用温水清洁患处' },
+        { title: '按时用药', desc: '按照医嘱使用药物' },
+      ]
+    },
+  ],
+};
 
-// 模拟AI对话历史
-const MOCK_AI_CHAT = [
-  { role: 'user', content: '我的皮炎什么时候能好？', time: '14:32' },
-  { role: 'ai', content: '根据您的恢复进度，预计还需要2-3周时间。请继续按照医嘱用药。', time: '14:32' },
-];
+// 获取特定疾病的历史记录
+const getDiseaseHistory = (diseaseName: string): HistoryRecord[] => {
+  // 尝试精确匹配
+  if (DISEASE_HISTORIES[diseaseName]) {
+    return DISEASE_HISTORIES[diseaseName];
+  }
+  
+  // 尝试模糊匹配（包含关键词）
+  for (const key of Object.keys(DISEASE_HISTORIES)) {
+    if (diseaseName.includes(key) || key.includes(diseaseName)) {
+      return DISEASE_HISTORIES[key];
+    }
+  }
+  
+  // 返回默认历史记录
+  return DISEASE_HISTORIES['default'];
+};
 
-// 模拟皮肤检测记录数据 - 与MOCK_HISTORY日期一致
-const MOCK_DETECTION_RECORDS: SkinDetectionRecord[] = [
-  {
-    id: 'd1',
-    date: '01-15',
-    time: '09:30',
-    severity: 3,
-    severityLabel: '重度',
-    lesionCount: 22,
-    affectedArea: 28,
-    confidence: 0.88,
-    notes: '初次诊断，特应性皮炎症状明显'
-  },
-  {
-    id: 'd2',
-    date: '01-10',
-    time: '14:20',
-    severity: 2,
-    severityLabel: '中度',
-    lesionCount: 15,
-    affectedArea: 18,
-    confidence: 0.82,
-    notes: '症状持续，开始使用药物治疗'
-  },
-  {
-    id: 'd3',
-    date: '01-05',
-    time: '10:15',
-    severity: 1,
-    severityLabel: '轻度',
-    lesionCount: 8,
-    affectedArea: 8,
-    confidence: 0.85,
-    notes: '症状明显缓解，继续用药巩固'
-  },
+// 初始AI对话历史
+const INITIAL_AI_CHAT: ChatMessage[] = [
+  { role: 'ai', content: '您好！我是您的AI智能医生。我可以根据您的疾病档案历史记录，为您解答关于皮肤健康的问题。请问有什么可以帮助您的？', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) },
 ];
 
 export default function RecordDetail({ record, onBack, onNavigate }: RecordDetailProps) {
   const [showAiChat, setShowAiChat] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState(MOCK_AI_CHAT);
-  const [currentRecord, setCurrentRecord] = useState<Record | null>(record);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INITIAL_AI_CHAT);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
+  const [currentRecord, setCurrentRecord] = useState<SkinRecord | null>(record);
   const [currentHistory, setCurrentHistory] = useState<HistoryRecord | null>(null);
 
   // 趋势诊断Agent相关状态
@@ -189,6 +254,9 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
   // 新记录检测状态
   const [hasNewRecords, setHasNewRecords] = useState(false);
   const [savedAnalysisDate, setSavedAnalysisDate] = useState<string | null>(null);
+
+  // 获取当前疾病的历史记录
+  const diseaseHistory = record ? getDiseaseHistory(record.title) : [];
 
   if (!record) return null;
 
@@ -208,8 +276,8 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
         setSavedAnalysisDate(parsed.date);
 
         // 检查是否有新记录
-        if (parsed.historyIds && MOCK_HISTORY.length > 0) {
-          const latestHistoryId = MOCK_HISTORY[0]?.id;
+        if (parsed.historyIds && diseaseHistory.length > 0) {
+          const latestHistoryId = diseaseHistory[0]?.id;
           const hasNew = !parsed.historyIds.includes(latestHistoryId);
           setHasNewRecords(hasNew);
         }
@@ -221,10 +289,10 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
 
   // 从历史记录数据计算趋势
   const calculateTrendFromHistory = () => {
-    if (MOCK_HISTORY.length < 2) return 'stable';
+    if (diseaseHistory.length < 2) return 'stable';
 
     // 按日期排序（最早的在前，时间正序）
-    const sortedHistory = [...MOCK_HISTORY].sort((a, b) => {
+    const sortedHistory = [...diseaseHistory].sort((a, b) => {
       const dateA = new Date(`2024-${a.date}`);
       const dateB = new Date(`2024-${b.date}`);
       return dateA.getTime() - dateB.getTime();
@@ -246,10 +314,10 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
 
   // 从历史记录计算恢复进度
   const calculateRecoveryProgressFromHistory = () => {
-    if (MOCK_HISTORY.length < 2) return null;
+    if (diseaseHistory.length < 2) return null;
 
     // 按日期排序（最早的在前，时间正序）
-    const sortedHistory = [...MOCK_HISTORY].sort((a, b) => {
+    const sortedHistory = [...diseaseHistory].sort((a, b) => {
       const dateA = new Date(`2024-${a.date}`);
       const dateB = new Date(`2024-${b.date}`);
       return dateA.getTime() - dateB.getTime();
@@ -331,7 +399,7 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
       const trend = calculateTrendFromHistory();
       
       // 获取最新的历史记录
-      const latestHistory = MOCK_HISTORY[0];
+      const latestHistory = diseaseHistory[0];
       
       const payload: DiseaseTrendPayload = {
         userId: record?.id || 'test_user_001',
@@ -360,7 +428,7 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
 
       // 保存到localStorage
       try {
-        const historyIds = MOCK_HISTORY.map(h => h.id);
+        const historyIds = diseaseHistory.map(h => h.id);
         const saveData = {
           trendResult: data,
           date: new Date().toISOString(),
@@ -420,14 +488,14 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
 
   // 处理历史记录点击，切换到对应的历史档案
   const handleHistoryClick = (historyItem: HistoryRecord) => {
-    const historyRecord: Record = {
+    const historyRecord: SkinRecord = {
       id: historyItem.id,
       title: historyItem.result,
       date: `2024-${historyItem.date}`,
       status: historyItem.status,
       probability: historyItem.probability,
-      image: record.image,
-      typicalImage: record.typicalImage,
+      image: record?.image || '',
+      typicalImage: record?.typicalImage,
     };
     setCurrentRecord(historyRecord);
     setCurrentHistory(historyItem);
@@ -439,26 +507,65 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
   // 使用当前显示的档案（可能是原始档案或历史档案）
   const displayRecord = currentRecord || record;
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+  // 自动滚动到最新消息
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || isAiTyping) return;
     
-    const newMessage = { 
+    const userMessage = chatInput.trim();
+    const currentTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+    const newUserMessage: ChatMessage = { 
       role: 'user', 
-      content: chatInput, 
-      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+      content: userMessage, 
+      time: currentTime
     };
     
-    setChatMessages(prev => [...prev, newMessage]);
+    setChatMessages(prev => [...prev, newUserMessage]);
     setChatInput('');
+    setIsAiTyping(true);
     
-    setTimeout(() => {
-      const aiReply = { 
-        role: 'ai', 
-        content: '我已收到您的问题，建议继续观察症状变化，如有异常请及时就医。', 
+    try {
+      const diseaseContext = displayRecord?.title || '';
+      
+      const response = await chatWithAIDoctor({
+        userId: 'user_001',
+        message: userMessage,
+        diseaseContext: diseaseContext,
+        chatHistory: chatMessages,
+        userRecords: diseaseHistory
+      });
+
+      if (response.success) {
+        const aiReply: ChatMessage = {
+          role: 'ai',
+          content: response.response,
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+        };
+        setChatMessages(prev => [...prev, aiReply]);
+      } else {
+        const errorReply: ChatMessage = {
+          role: 'ai',
+          content: '抱歉，我暂时无法回答您的问题。请稍后重试或咨询专业医生。',
+          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+        };
+        setChatMessages(prev => [...prev, errorReply]);
+      }
+    } catch (error) {
+      const errorReply: ChatMessage = {
+        role: 'ai',
+        content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。',
         time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
       };
-      setChatMessages(prev => [...prev, aiReply]);
-    }, 1000);
+      setChatMessages(prev => [...prev, errorReply]);
+    } finally {
+      setIsAiTyping(false);
+    }
   };
 
   // 计算当前趋势和恢复进度（基于历史记录）
@@ -544,7 +651,7 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
               className="ml-auto flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full text-sm text-gray-700 hover:bg-gray-100 transition-colors"
             >
               <span>查看全部</span>
-              <span className="text-gray-400">({MOCK_HISTORY.length})</span>
+              <span className="text-gray-400">({diseaseHistory.length})</span>
             </motion.button>
           </div>
 
@@ -558,7 +665,7 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
                 className="mt-3 overflow-hidden"
               >
                 <div className="flex flex-col gap-2">
-                  {MOCK_HISTORY.map((item) => (
+                  {diseaseHistory.map((item) => (
                     <motion.button
                       key={item.id}
                       whileTap={{ scale: 0.98 }}
@@ -692,9 +799,19 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
 
               {/* 分析信息 */}
               {savedAnalysisDate && !hasNewRecords && (
-                <div className="mb-4 flex items-center gap-2 text-xs text-gray-400">
-                  <Clock size={14} />
-                  <span>上次分析: {new Date(savedAnalysisDate).toLocaleString('zh-CN')}</span>
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <Clock size={14} />
+                    <span>上次分析: {new Date(savedAnalysisDate).toLocaleString('zh-CN')}</span>
+                  </div>
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={fetchTrendAnalysis}
+                    className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium hover:bg-purple-100 transition-colors"
+                  >
+                    <Play size={12} />
+                    重新分析
+                  </motion.button>
                 </div>
               )}
 
@@ -995,7 +1112,7 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
               </div>
 
               {/* 聊天消息区域 - 可独立滚动 */}
-              <div className="overflow-y-auto px-4 py-3" style={{ height: '280px' }}>
+              <div ref={chatContainerRef} className="overflow-y-auto px-4 py-3" style={{ height: '280px' }}>
                 <div className="space-y-3">
                   {chatMessages.map((msg, idx) => (
                     <div key={idx} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -1010,12 +1127,45 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
                             ? 'bg-blue-500 text-white rounded-br-md' 
                             : 'bg-gray-100 text-gray-700 rounded-bl-md'
                         }`}>
-                          {msg.content}
+                          {msg.role === 'user' ? (
+                            msg.content
+                          ) : (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({node, ...props}) => <p className="mb-1.5 last:mb-0 leading-relaxed" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-1.5 last:mb-0 space-y-0.5" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-1.5 last:mb-0 space-y-0.5" {...props} />,
+                                li: ({node, ...props}) => <li className="pl-0.5" {...props} />,
+                                blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-purple-300 pl-3 text-gray-600 italic my-1.5 py-0.5 bg-purple-50/50 rounded-r-lg" {...props} />
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+                          )}
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1">{msg.time}</p>
                       </div>
                     </div>
                   ))}
+                  {/* AI正在输入指示器 */}
+                  {isAiTyping && (
+                    <div className="flex gap-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-purple-100">
+                        <Bot size={14} className="text-purple-600" />
+                      </div>
+                      <div className="max-w-[75%]">
+                        <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-gray-100 text-gray-700 rounded-bl-md">
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1027,13 +1177,15 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="输入您的问题..."
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-purple-400 bg-gray-50"
+                    placeholder={isAiTyping ? "AI正在思考..." : "输入您的问题..."}
+                    disabled={isAiTyping}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-purple-400 bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleSendMessage}
-                    className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white shadow-md"
+                    disabled={isAiTyping || !chatInput.trim()}
+                    className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send size={16} />
                   </motion.button>

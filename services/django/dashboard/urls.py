@@ -12,6 +12,10 @@ urlpatterns = [
     path("api/analyze-skin-record", views.analyze_skin_record, name="analyze-skin-record"),
     # 疾病趋势诊断Agent
     path("api/disease-trend-analysis", views.disease_trend_analysis, name="disease-trend-analysis"),
+    # AI智能医生对话
+    path("api/ai-doctor-chat", views.ai_doctor_chat, name="ai-doctor-chat"),
+    # AI智能医生流式对话
+    path("api/ai-doctor-chat-stream", views.ai_doctor_chat_stream, name="ai-doctor-chat-stream"),
     # 管理后台API
     path("api/admin/ai/providers", views.providers, name="providers"),
     path("api/admin/ai/config", views.config, name="config"),

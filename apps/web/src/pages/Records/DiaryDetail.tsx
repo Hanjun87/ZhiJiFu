@@ -1,11 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  CheckCircle2, Calendar, Sun, Droplets, Loader2, 
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import {
+  CheckCircle2, Calendar, Sun, Droplets, Loader2,
   Sparkles, Shield, Edit3, ChevronRight, Plus, X,
   Thermometer, Wind, Bot, Send, User, Phone
 } from 'lucide-react';
 import BackButton from '../../components/common/BackButton';
+import { streamChatWithAIDoctor, ChatMessage } from '../../api/aiDoctor';
 
 interface DiaryDetailProps {
   entry: {
@@ -44,10 +47,9 @@ const envData = {
   uv: '中等',
 };
 
-// 模拟AI对话历史
-const MOCK_AI_CHAT = [
-  { role: 'user', content: '我的皮肤状态怎么样？', time: '14:32' },
-  { role: 'ai', content: '根据您的记录，今天皮肤状态良好。建议继续保持当前的护肤习惯，注意防晒和保湿。', time: '14:32' },
+// AI对话历史初始消息
+const INITIAL_AI_CHAT: ChatMessage[] = [
+  { role: 'ai', content: '您好！我是您的AI智能医生。我可以根据您的疾病档案历史记录，为您解答关于皮肤健康的问题。请问有什么可以帮助您的？', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) },
 ];
 
 export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailProps) {
@@ -65,7 +67,8 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
   // AI对话相关状态
   const [showAiChat, setShowAiChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState(MOCK_AI_CHAT);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INITIAL_AI_CHAT);
+  const [isAiTyping, setIsAiTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // 从后端获取的护理建议和AI结论
@@ -162,26 +165,95 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
   };
 
   // 发送AI消息
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
-    
-    const newMessage = { 
-      role: 'user', 
-      content: chatInput, 
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || isAiTyping) return;
+
+    const userMessage = chatInput.trim();
+    const currentTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+    // 添加用户消息到列表
+    const newUserMessage: ChatMessage = {
+      role: 'user',
+      content: userMessage,
+      time: currentTime
+    };
+
+    setChatMessages(prev => [...prev, newUserMessage]);
+    setChatInput('');
+    setIsAiTyping(true);
+
+    // 创建AI消息占位符
+    const aiMessageId = Date.now().toString();
+    const aiPlaceholder: ChatMessage = {
+      role: 'ai',
+      content: '',
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     };
-    
-    setChatMessages(prev => [...prev, newMessage]);
-    setChatInput('');
-    
-    setTimeout(() => {
-      const aiReply = { 
-        role: 'ai', 
-        content: '我已收到您的问题，建议继续观察皮肤变化，如有异常请及时咨询专业医生。', 
-        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-      };
-      setChatMessages(prev => [...prev, aiReply]);
-    }, 1000);
+    setChatMessages(prev => [...prev, aiPlaceholder]);
+
+    try {
+      // 提取疾病上下文
+      const diseaseKeywords = ['皮炎', '湿疹', '痤疮', '痘', '癣', '擦伤', '烫伤', '红斑'];
+      let diseaseContext = '';
+      if (entry && diseaseKeywords.some(keyword => entry.title.includes(keyword))) {
+        diseaseContext = entry.title;
+      }
+
+      // 使用流式API
+      await streamChatWithAIDoctor({
+        userId: 'user_001',
+        message: userMessage,
+        diseaseContext: diseaseContext,
+        chatHistory: chatMessages
+      }, {
+        onChunk: (chunk) => {
+          // 实时更新AI消息
+          setChatMessages(prev => {
+            const updated = [...prev];
+            const lastMsg = updated[updated.length - 1];
+            if (lastMsg && lastMsg.role === 'ai') {
+              updated[updated.length - 1] = {
+                ...lastMsg,
+                content: lastMsg.content + chunk
+              };
+            }
+            return updated;
+          });
+        },
+        onError: (error) => {
+          // 更新最后一条AI消息为错误信息
+          setChatMessages(prev => {
+            const updated = [...prev];
+            const lastMsg = updated[updated.length - 1];
+            if (lastMsg && lastMsg.role === 'ai') {
+              updated[updated.length - 1] = {
+                ...lastMsg,
+                content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
+              };
+            }
+            return updated;
+          });
+        },
+        onDone: () => {
+          // 流式传输完成
+        }
+      });
+    } catch (error) {
+      // 更新最后一条AI消息为错误信息
+      setChatMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg && lastMsg.role === 'ai') {
+          updated[updated.length - 1] = {
+            ...lastMsg,
+            content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
+          };
+        }
+        return updated;
+      });
+    } finally {
+      setIsAiTyping(false);
+    }
   };
 
   if (!entry) {
@@ -286,6 +358,46 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                 <Shield size={18} className="text-emerald-600" />
               </div>
               <h2 className="font-bold text-gray-900">护理建议</h2>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={async () => {
+                  setIsFetchingAdvice(true);
+                  try {
+                    const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8788').replace(/\/$/, '');
+                    const diseaseKeywords = ['皮炎', '湿疹', '痤疮', '痘', '癣', '擦伤', '烫伤', '红斑'];
+                    let disease = '痤疮';
+                    if (diseaseKeywords.some(keyword => entry.title.includes(keyword))) {
+                      disease = entry.title;
+                    }
+                    const response = await fetch(`${BACKEND_URL}/api/disease-trend-analysis`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        userId: 'user_001',
+                        targetDisease: disease,
+                        timeWindowDays: 30,
+                        trend: 'improving',
+                        userProfile: { skin_type: 'mixed' }
+                      }),
+                    });
+                    const data = await response.json();
+                    if (data.success && data.result) {
+                      const advice = data.result.care_advice || data.result.final_report?.care_advice || [];
+                      setCareAdvice(advice);
+                      setAiVerdict(data.result.final_verdict || 'stable');
+                    }
+                  } catch (e) {
+                    console.error('Failed to fetch trend data', e);
+                  } finally {
+                    setIsFetchingAdvice(false);
+                  }
+                }}
+                disabled={isFetchingAdvice}
+                className="ml-auto px-2.5 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+              >
+                <Sparkles size={14} className={isFetchingAdvice ? 'animate-spin' : ''} />
+                <span>{isFetchingAdvice ? '分析中...' : '重新分析'}</span>
+              </motion.button>
             </div>
 
             <div className="space-y-3">
@@ -706,16 +818,49 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                       </div>
                       <div className={`max-w-[75%] ${msg.role === 'user' ? 'text-right' : ''}`}>
                         <div className={`inline-block px-3 py-2 rounded-2xl text-sm ${
-                          msg.role === 'user' 
-                            ? 'bg-blue-500 text-white rounded-br-md' 
+                          msg.role === 'user'
+                            ? 'bg-blue-500 text-white rounded-br-md'
                             : 'bg-gray-100 text-gray-700 rounded-bl-md'
                         }`}>
-                          {msg.content}
+                          {msg.role === 'user' ? (
+                            msg.content
+                          ) : (
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{
+                                p: ({node, ...props}) => <p className="mb-1.5 last:mb-0 leading-relaxed" {...props} />,
+                                strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                                ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-1.5 last:mb-0 space-y-0.5" {...props} />,
+                                ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-1.5 last:mb-0 space-y-0.5" {...props} />,
+                                li: ({node, ...props}) => <li className="pl-0.5" {...props} />,
+                                blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-purple-300 pl-3 text-gray-600 italic my-1.5 py-0.5 bg-purple-50/50 rounded-r-lg" {...props} />
+                              }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
+                          )}
                         </div>
                         <p className="text-[10px] text-gray-400 mt-1">{msg.time}</p>
                       </div>
                     </div>
                   ))}
+                  {/* AI正在输入指示器 */}
+                  {isAiTyping && (
+                    <div className="flex gap-2">
+                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-purple-100">
+                        <Bot size={14} className="text-purple-600" />
+                      </div>
+                      <div className="max-w-[75%]">
+                        <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-gray-100 text-gray-700 rounded-bl-md">
+                          <div className="flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -727,13 +872,15 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="输入您的问题..."
-                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-purple-400 bg-gray-50"
+                    placeholder={isAiTyping ? "AI正在思考..." : "输入您的问题..."}
+                    disabled={isAiTyping}
+                    className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-purple-400 bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleSendMessage}
-                    className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white shadow-md"
+                    disabled={isAiTyping || !chatInput.trim()}
+                    className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send size={16} />
                   </motion.button>
