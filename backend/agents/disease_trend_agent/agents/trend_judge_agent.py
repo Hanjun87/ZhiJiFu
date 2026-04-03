@@ -41,17 +41,28 @@ class TrendJudgeAgent:
         # 构造提示词
         prompt = TREND_JUDGE_PROMPT.format(context=context)
         
-        # 调用LLM
-        result = self.llm.invoke(prompt)
-        
-        # 解析JSON结果
         try:
-            decision = json.loads(result.content)
-        except json.JSONDecodeError:
+            # 调用LLM
+            result = self.llm.invoke(prompt)
+            
+            # 清理可能的 Markdown 格式
+            content = result.content.strip()
+            if content.startswith("```json"):
+                content = content[7:]
+            if content.startswith("```"):
+                content = content[3:]
+            if content.endswith("```"):
+                content = content[:-3]
+            content = content.strip()
+            
+            # 解析JSON结果
+            decision = json.loads(content)
+        except Exception as e:
+            print(f"TrendJudgeAgent LLM 调用或解析失败: {e}")
             # 如果解析失败，使用默认决策
             decision = {
                 "action": "FINALIZE",
-                "reason": "解析失败，使用默认决策",
+                "reason": f"判断失败，使用默认决策 ({str(e)})",
                 "confidence": 0.5,
                 "suggested_verdict": None,
                 "risk_level": "medium"
@@ -59,7 +70,7 @@ class TrendJudgeAgent:
         
         return {
             "agent_decision": decision,
-            "needs_doctor": decision["action"] == "ALERT_DOCTOR"
+            "needs_doctor": decision.get("action") == "ALERT_DOCTOR"
         }
     
     def _build_context(self, state: DiseaseTrackingState) -> str:
@@ -72,7 +83,7 @@ class TrendJudgeAgent:
         Returns:
             格式化的上下文字符串
         """
-        indicators = state.get("trend_indicators", {})
+        indicators = state.get("trend_indicators") or {}
         
         return f"""
         【基础信息】

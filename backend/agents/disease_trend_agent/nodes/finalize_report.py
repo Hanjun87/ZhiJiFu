@@ -20,8 +20,8 @@ def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
     Returns:
         更新后的状态
     """
-    indicators = state.get("trend_indicators", {})
-    agent_decision = state.get("agent_decision", {})
+    indicators = state.get("trend_indicators") or {}
+    agent_decision = state.get("agent_decision") or {}
     rag_context = state.get("rag_context")
     raw_records = state.get("raw_records", [])
     user_profile = state.get("user_profile")

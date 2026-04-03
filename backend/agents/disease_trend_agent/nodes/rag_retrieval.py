@@ -2,6 +2,8 @@
 RAG检索节点 - 接入Unified Medical RAG知识库
 """
 
+from typing import Dict, Any, List
+
 from ..core.state import DiseaseTrackingState
 from ..services.rag_service import rag_service
 
@@ -16,7 +18,7 @@ def rag_retrieval_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
     Returns:
         更新后的状态
     """
-    indicators = state.get("trend_indicators", {})
+    indicators = state.get("trend_indicators") or {}
     target_disease = state.get("target_disease", "")
     user_id = state.get("user_id", "")
     
@@ -68,7 +70,7 @@ def _determine_knowledge_type(disease_name: str) -> str:
     if not disease_name:
         return ""
     
-    disease_name = disease_name.lower()
+    disease_name_lower = disease_name.lower()
     
     # 伤口护理相关关键词
     wound_keywords = [
@@ -89,11 +91,11 @@ def _determine_knowledge_type(disease_name: str) -> str:
     
     # 检查关键词匹配
     for keyword in wound_keywords:
-        if keyword in disease_name:
+        if keyword in disease_name_lower:
             return "wound"
     
     for keyword in dermatology_keywords:
-        if keyword in disease_name:
+        if keyword in disease_name_lower:
             return "dermatology"
     
     # 默认返回皮肤病类型
@@ -110,7 +112,7 @@ def _build_query_text(state: DiseaseTrackingState) -> str:
     Returns:
         查询文本
     """
-    indicators = state.get("trend_indicators", {})
+    indicators = state.get("trend_indicators") or {}
     target_disease = state.get("target_disease", "")
     
     query_parts = []
@@ -132,7 +134,7 @@ def _build_query_text(state: DiseaseTrackingState) -> str:
     return "，".join(query_parts) if query_parts else "皮肤病治疗和护理建议"
 
 
-def _describe_trend(severity_timeline: list) -> str:
+def _describe_trend(severity_timeline: List[int]) -> str:
     """描述趋势"""
     if not severity_timeline or len(severity_timeline) < 2:
         return "稳定"
@@ -148,7 +150,7 @@ def _describe_trend(severity_timeline: list) -> str:
         return "稳定"
 
 
-def _analyze_trend_pattern(severity_timeline: list) -> str:
+def _analyze_trend_pattern(severity_timeline: List[int]) -> str:
     """
     分析趋势模式
     
@@ -179,3 +181,43 @@ def _analyze_trend_pattern(severity_timeline: list) -> str:
         if max_val > first:
             return "波动"  # 有波动但最终稳定
         return "稳定"
+
+
+def get_disease_knowledge_from_rag(disease_name: str) -> Dict[str, Any]:
+    """
+    从RAG获取疾病知识（便捷函数）
+    
+    Args:
+        disease_name: 疾病名称
+        
+    Returns:
+        疾病知识字典
+    """
+    knowledge_type = _determine_knowledge_type(disease_name)
+    return rag_service.query_disease_knowledge(disease_name, knowledge_type)
+
+
+def search_medical_knowledge(query: str, knowledge_type: str = "") -> List[Dict[str, Any]]:
+    """
+    搜索医学知识（便捷函数）
+    
+    Args:
+        query: 查询文本
+        knowledge_type: 知识类型
+        
+    Returns:
+        医学知识列表
+    """
+    if not knowledge_type:
+        knowledge_type = _determine_knowledge_type(query)
+    
+    rag_query = {
+        "query_type": "disease_knowledge",
+        "query_text": query,
+        "disease_type": query,
+        "knowledge_type": knowledge_type,
+        "top_k": 3
+    }
+    
+    result = rag_service.query_similar_cases(rag_query)
+    return result.get("search_results", [])

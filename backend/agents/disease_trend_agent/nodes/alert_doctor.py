@@ -17,8 +17,8 @@ def alert_doctor_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
     """
     user_id = state["user_id"]
     case_id = state["case_id"]
-    indicators = state.get("trend_indicators", {})
-    agent_decision = state.get("agent_decision", {})
+    indicators = state.get("trend_indicators") or {}
+    agent_decision = state.get("agent_decision") or {}
     
     # 构建告警信息
     alert_message = {
