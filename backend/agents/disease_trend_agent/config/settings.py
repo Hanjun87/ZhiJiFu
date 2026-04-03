@@ -21,12 +21,13 @@ class Settings(BaseSettings):
     API_CONFIDENCE_THRESHOLD: float = 0.5  # API置信度阈值
     
     # LLM配置
-    LLM_MODEL: str = "gpt-4"
+    LLM_MODEL: str = "qwen-plus"
     LLM_TEMPERATURE: float = 0.2
     
-    # 阿里云API配置
-    ALIYUN_API_KEY: Optional[str] = None
-    ALIYUN_API_ENDPOINT: Optional[str] = None
+    # 阿里云百炼平台配置 - 支持 DASHSCOPE_API_KEY 和 BAILIAN_API_KEY
+    BAILIAN_API_KEY: Optional[str] = None
+    DASHSCOPE_API_KEY: Optional[str] = None
+    BAILIAN_MODEL: str = "qwen-plus"
     
     # RAG服务配置
     RAG_SERVICE_URL: Optional[str] = None
@@ -36,9 +37,15 @@ class Settings(BaseSettings):
     DOCTOR_ALERT_ENABLED: bool = True
     DOCTOR_ALERT_CHANNELS: list = ["sms", "app_push"]
     
+    def get_api_key(self) -> Optional[str]:
+        """获取API Key，优先使用环境变量中的 DASHSCOPE_API_KEY"""
+        # 直接从 os.environ 读取，确保获取最新的环境变量
+        return os.environ.get('DASHSCOPE_API_KEY') or os.environ.get('BAILIAN_API_KEY') or self.DASHSCOPE_API_KEY or self.BAILIAN_API_KEY
+    
     class Config:
         env_file = ".env"
         env_prefix = "DISEASE_TREND_"
+        extra = "ignore"  # 忽略额外的环境变量
 
 
 settings = Settings()

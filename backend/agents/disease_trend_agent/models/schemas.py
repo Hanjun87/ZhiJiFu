@@ -57,6 +57,17 @@ class ComparisonWithHistory(BaseModel):
     recovery_speed_percentile: Optional[float] = Field(None, description="恢复速度百分位")
 
 
+class CareAdviceItem(BaseModel):
+    """护理建议项"""
+    category: str = Field(..., description="建议类别")
+    priority: str = Field(..., description="优先级: high/medium/low")
+    title: str = Field(..., description="建议标题")
+    description: str = Field(..., description="建议描述")
+    tips: List[str] = Field(default_factory=list, description="具体建议列表")
+    frequency: Optional[str] = Field(None, description="建议频率")
+    products: Optional[List[str]] = Field(None, description="推荐产品类型")
+
+
 class FinalReport(BaseModel):
     """最终报告"""
     report_type: str = Field("disease_trend_30d", description="报告类型")
@@ -65,6 +76,7 @@ class FinalReport(BaseModel):
     trend_analysis: TrendAnalysis = Field(..., description="趋势分析")
     agent_decision_log: AgentDecisionLog = Field(default_factory=AgentDecisionLog, description="决策日志")
     comparison_with_history: ComparisonWithHistory = Field(default_factory=ComparisonWithHistory, description="历史对比")
+    care_advice: List[CareAdviceItem] = Field(default_factory=list, description="护理建议")
     alerts: List[str] = Field(default_factory=list, description="告警信息")
     doctor_review_required: bool = Field(False, description="是否需要医生审核")
 

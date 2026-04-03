@@ -52,5 +52,16 @@ class DiseaseTrackingState(TypedDict):
     #   "started_at": "2024-01-01",
     #   "progress_changed": "improving" | "stable" | "concerning"
     # }
+    care_advice: Optional[List[Dict]]  # 护理建议列表
+    # [
+    #   {
+    #     "category": "cleaning",
+    #     "priority": "high",
+    #     "title": "温和清洁",
+    #     "description": "...",
+    #     "tips": ["..."],
+    #     "frequency": "每天早晚各1次"
+    #   }
+    # ]
     alerts: List[str]
     needs_doctor: bool

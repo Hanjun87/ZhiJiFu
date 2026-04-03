@@ -4,7 +4,7 @@
 
 import json
 from typing import Dict, Any
-from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatTongyi
 from ..core.state import DiseaseTrackingState
 from ..config.settings import settings
 from ..config.prompts import TREND_JUDGE_PROMPT
@@ -16,9 +16,13 @@ class TrendJudgeAgent:
     """
     
     def __init__(self):
-        self.llm = ChatOpenAI(
-            model=settings.LLM_MODEL,
-            temperature=settings.LLM_TEMPERATURE
+        api_key = settings.get_api_key()
+        if not api_key:
+            raise ValueError("未配置 API Key，请设置 DASHSCOPE_API_KEY 或 BAILIAN_API_KEY 环境变量")
+        self.llm = ChatTongyi(
+            model=settings.BAILIAN_MODEL,
+            temperature=settings.LLM_TEMPERATURE,
+            dashscope_api_key=api_key
         )
     
     def invoke(self, state: DiseaseTrackingState) -> Dict[str, Any]:

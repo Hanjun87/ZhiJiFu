@@ -22,6 +22,16 @@ export interface DiseaseTrendPayload {
   };
 }
 
+export interface CareAdviceItem {
+  category: string;
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  tips: string[];
+  frequency?: string;
+  products?: string[];
+}
+
 export interface DiseaseTrendResult {
   success: boolean;
   result?: {
@@ -32,7 +42,30 @@ export interface DiseaseTrendResult {
       started_at: string;
       progress_changed: 'improving' | 'stable' | 'concerning' | 'uncertain';
     };
-    final_report: any;
+    final_report: {
+      executive_summary?: {
+        recovery_progress?: {
+          details?: {
+            lesion_recovery?: {
+              percent: number;
+              change: string;
+            };
+            area_recovery?: {
+              percent: number;
+              change: string;
+            };
+            severity_recovery?: {
+              percent: number;
+              from_level: number;
+              to_level: number;
+            };
+          };
+        };
+      };
+      care_advice?: CareAdviceItem[];
+      [key: string]: any;
+    };
+    care_advice?: CareAdviceItem[];  // 后端直接返回的护理建议
     needs_doctor: boolean;
     alerts: string[];
   };

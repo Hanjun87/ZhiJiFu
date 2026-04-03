@@ -7,6 +7,7 @@ from typing import Dict, Any, Literal, List, Optional
 from ..core.state import DiseaseTrackingState
 from ..utils.report_renderer import ReportRenderer
 from ..utils.recovery_calculator import calculate_recovery_progress, calculator
+from ..utils.care_advisor import generate_care_advice
 
 
 def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
@@ -24,6 +25,7 @@ def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
     rag_context = state.get("rag_context")
     raw_records = state.get("raw_records", [])
     user_profile = state.get("user_profile")
+    target_disease = state.get("target_disease", "")  # 获取目标疾病名称
 
     suggested_verdict = agent_decision.get("suggested_verdict")
     if suggested_verdict:
@@ -39,6 +41,17 @@ def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
         user_profile=user_profile
     )
     state["recovery_progress"] = recovery_progress
+
+    # 生成护理建议 - 传入RAG上下文和疾病名称
+    care_advice = generate_care_advice(
+        verdict=final_verdict,
+        recovery_progress=recovery_progress,
+        user_profile=user_profile,
+        trend_indicators=indicators,
+        rag_context=rag_context,  # 传入RAG医学知识
+        disease_name=target_disease  # 传入疾病名称
+    )
+    state["care_advice"] = care_advice
 
     renderer = ReportRenderer()
     report = renderer.render({
@@ -63,6 +76,7 @@ def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
             "action_taken": agent_decision.get("action", "UNKNOWN"),
             "rag_consulted": rag_context is not None
         },
+        "rag_insights": _extract_rag_insights(rag_context),
         "comparison_with_history": {
             "similar_cases_found": len(rag_context.get("similar_cases", [])) if rag_context else 0,
             "recovery_speed_percentile": None
@@ -107,12 +121,90 @@ def _generate_next_action(verdict: str, agent_decision: Dict[str, Any]) -> str:
 def _extract_improvements(indicators: Dict[str, Any]) -> list:
     """提取改善点"""
     improvements = []
-    # TODO: 根据指标提取具体改善点
+    
+    # 分析严重度变化
+    severity_timeline = indicators.get("severity_timeline", [])
+    if severity_timeline and len(severity_timeline) >= 2:
+        first = severity_timeline[0]
+        last = severity_timeline[-1]
+        if last < first:
+            improvements.append(f"严重度从{first}级降至{last}级")
+    
+    # 分析病灶数变化
+    lesion_trend = indicators.get("lesion_count_trend", "")
+    if lesion_trend and "-" in str(lesion_trend):
+        improvements.append(f"病灶数量减少{lesion_trend}")
+    
+    # 分析面积变化
+    area_change = indicators.get("affected_area_change", "")
+    if area_change and "-" in str(area_change):
+        improvements.append(f"受影响面积减少{area_change}")
+    
     return improvements
 
 
 def _extract_remaining_issues(indicators: Dict[str, Any]) -> list:
     """提取遗留问题"""
     issues = []
-    # TODO: 根据指标提取遗留问题
+    
+    # 分析异常点
+    anomaly_points = indicators.get("anomaly_points", [])
+    if anomaly_points and anomaly_points != ["无"]:
+        issues.extend(anomaly_points)
+    
+    # 分析诊断一致性
+    if not indicators.get("disease_consistency", True):
+        issues.append("诊断结果存在波动，需进一步观察")
+    
+    # 分析API置信度
+    api_confidence = indicators.get("api_confidence_trend", "")
+    if api_confidence == "declining":
+        issues.append("图像识别置信度下降，建议重新拍摄")
+    
     return issues
+
+
+def _extract_rag_insights(rag_context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    提取RAG洞察信息
+    
+    Args:
+        rag_context: RAG检索结果
+        
+    Returns:
+        RAG洞察字典
+    """
+    if not rag_context:
+        return {
+            "available": False,
+            "message": "未使用RAG知识库"
+        }
+    
+    insights = {
+        "available": True,
+        "source": rag_context.get("source", "unknown"),
+        "similar_cases_count": len(rag_context.get("similar_cases", [])),
+        "prognosis_insights": rag_context.get("prognosis_insights", []),
+        "medical_knowledge_summary": ""
+    }
+    
+    # 提取医学知识摘要
+    medical_knowledge = rag_context.get("medical_knowledge", "")
+    if medical_knowledge:
+        # 截取前200字符作为摘要
+        summary = medical_knowledge[:200].replace("\n", " ")
+        if len(medical_knowledge) > 200:
+            summary += "..."
+        insights["medical_knowledge_summary"] = summary
+    
+    # 提取症状信息
+    symptoms = rag_context.get("symptoms", [])
+    if symptoms:
+        insights["key_symptoms"] = symptoms[:5]
+    
+    # 提取治疗建议
+    treatments = rag_context.get("treatments", [])
+    if treatments:
+        insights["treatment_suggestions"] = treatments[:5]
+    
+    return insights

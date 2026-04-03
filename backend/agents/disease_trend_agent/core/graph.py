@@ -45,16 +45,16 @@ def build_workflow() -> StateGraph:
         "trend_judge_agent",
         route_by_agent_decision,
         {
-            "FINALIZE": "finalize_report",
+            "FINALIZE": "rag_retrieval", # 确保始终获取RAG知识
             "RAG_LOOKUP": "rag_retrieval",
-            "REQUEST_DATA": END,  # 返回用户，补充数据
+            "REQUEST_DATA": "rag_retrieval",  # 即使数据不足，也提供疾病的基础RAG护理建议
             "ALERT_DOCTOR": "alert_doctor"
         }
     )
     
-    # RAG和ALERT后都汇聚到finalize
+    # RAG后汇聚到finalize
     workflow.add_edge("rag_retrieval", "finalize_report")
-    workflow.add_edge("alert_doctor", "finalize_report")
+    workflow.add_edge("alert_doctor", "rag_retrieval")
     
     # 结束节点
     workflow.add_edge("finalize_report", END)

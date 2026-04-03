@@ -26,6 +26,7 @@ class ReportRenderer:
             "trend_analysis": data.get("trend_analysis", {}),
             "agent_decision_log": data.get("agent_decision_log", {}),
             "comparison_with_history": data.get("comparison_with_history", {}),
+            "care_advice": data.get("care_advice", []),
             "alerts": data.get("alerts", []),
             "doctor_review_required": data.get("doctor_review_required", False)
         }

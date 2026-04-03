@@ -68,6 +68,52 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
   const [chatMessages, setChatMessages] = useState(MOCK_AI_CHAT);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // 从后端获取的护理建议和AI结论
+  const [careAdvice, setCareAdvice] = useState<any[]>([]);
+  const [aiVerdict, setAiVerdict] = useState<string>('stable');
+  const [isFetchingAdvice, setIsFetchingAdvice] = useState(false);
+
+  useEffect(() => {
+    if (entry) {
+      const fetchTrend = async () => {
+        setIsFetchingAdvice(true);
+        try {
+          const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8788').replace(/\/$/, '');
+          
+          // 提取疾病名称，如果日记标题不是疾病，则默认使用一个常见的皮肤病用于RAG匹配
+          const diseaseKeywords = ['皮炎', '湿疹', '痤疮', '痘', '癣', '擦伤', '烫伤', '红斑'];
+          let disease = '痤疮'; // 默认疾病
+          if (diseaseKeywords.some(keyword => entry.title.includes(keyword))) {
+            disease = entry.title;
+          }
+
+          const response = await fetch(`${BACKEND_URL}/api/disease-trend-analysis`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: 'user_001',
+              targetDisease: disease,
+              timeWindowDays: 30,
+              trend: 'improving',
+              userProfile: { skin_type: 'mixed' }
+            }),
+          });
+          const data = await response.json();
+          if (data.success && data.result) {
+            const advice = data.result.care_advice || data.result.final_report?.care_advice || [];
+            setCareAdvice(advice);
+            setAiVerdict(data.result.final_verdict || 'stable');
+          }
+        } catch (e) {
+          console.error('Failed to fetch trend data', e);
+        } finally {
+          setIsFetchingAdvice(false);
+        }
+      };
+      fetchTrend();
+    }
+  }, [entry]);
+
   // 自动滚动到最新消息
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -243,21 +289,45 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
             </div>
 
             <div className="space-y-3">
-              {[
-                { icon: Shield, title: '屏障修护', desc: '建议使用含神经酰胺的修护产品' },
-                { icon: Droplets, title: '保湿补水', desc: '肌肤水分含量偏低，需加强保湿' },
-                { icon: Sun, title: '严格防晒', desc: '紫外线指数较高，注意防晒保护' },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-2xl border border-gray-100">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                    <item.icon size={18} className="text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{item.title}</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
-                  </div>
+              {isFetchingAdvice ? (
+                <div className="text-center py-4 text-gray-400 text-sm">
+                  正在生成个性化护理建议...
                 </div>
-              ))}
+              ) : careAdvice.length > 0 ? (
+                careAdvice.map((advice, idx) => {
+                  let Icon = Shield;
+                  if (advice.category === 'cleaning' || advice.category === 'moisturizing') Icon = Droplets;
+                  if (advice.category === 'sunscreen') Icon = Sun;
+                  
+                  return (
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-2xl border border-gray-100">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                        <Icon size={18} className="text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-gray-900 text-sm">{advice.title}</h4>
+                        <p className="text-xs text-gray-500 mt-0.5">{advice.description}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                [
+                  { icon: Shield, title: '屏障修护', desc: '建议使用含神经酰胺的修护产品' },
+                  { icon: Droplets, title: '保湿补水', desc: '肌肤水分含量偏低，需加强保湿' },
+                  { icon: Sun, title: '严格防晒', desc: '紫外线指数较高，注意防晒保护' },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-2xl border border-gray-100">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                      <item.icon size={18} className="text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">{item.title}</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </motion.section>
@@ -557,17 +627,33 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                   <Bot size={20} className="text-purple-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-700 leading-relaxed">
-                    根据今天的皮肤记录，整体状态良好。眼袋轻微，建议保证充足睡眠。色斑和黑眼圈处于中等水平，建议加强防晒和眼部护理。继续保持当前的护肤习惯，注意补水和防晒。
-                  </p>
-                  <div className="mt-3 pt-3 border-t border-purple-100">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                      <span className="font-medium">建议重点：</span>
-                      <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">防晒</span>
-                      <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">保湿</span>
-                      <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">眼部护理</span>
-                    </div>
-                  </div>
+                  {isFetchingAdvice ? (
+                    <p className="text-sm text-gray-700 leading-relaxed">正在分析皮肤数据并生成AI点评...</p>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-700 leading-relaxed">
+                        {aiVerdict === 'better' && '根据最近的数据分析，您的皮肤状况正在好转！继续保持当前的护肤习惯，注意巩固效果。'}
+                        {aiVerdict === 'worse' && '近期皮肤状况有恶化趋势，建议您重点关注近期使用的护肤品或生活作息是否改变，如有不适请及时就医。'}
+                        {aiVerdict === 'stable' && '皮肤状态保持稳定。建议继续保持当前的日常护理，注意防晒和基础保湿。'}
+                        {aiVerdict === 'insufficient' && '根据今天的皮肤记录，整体状态良好。继续保持当前的护肤习惯，注意补水和防晒。'}
+                      </p>
+                      <div className="mt-3 pt-3 border-t border-purple-100">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <span className="font-medium">建议重点：</span>
+                          {careAdvice.slice(0, 3).map((advice, idx) => (
+                            <span key={idx} className="px-2 py-0.5 bg-white rounded-full text-purple-600">{advice.title}</span>
+                          ))}
+                          {careAdvice.length === 0 && (
+                            <>
+                              <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">防晒</span>
+                              <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">保湿</span>
+                              <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">眼部护理</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

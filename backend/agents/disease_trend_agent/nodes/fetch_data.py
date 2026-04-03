@@ -21,6 +21,10 @@ def fetch_data_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
     target_disease = state.get("target_disease")
     days = state["time_window_days"]
     
+    # 如果已经有数据，则跳过获取
+    if state.get("raw_records"):
+        return state
+        
     # 计算时间范围
     end_date = datetime.now()
     start_date = end_date - timedelta(days=days)

@@ -201,12 +201,19 @@ class AdvancedRecoveryCalculator:
         reduction = m.lesion_count_initial - m.lesion_count_current
         total_possible = m.lesion_count_initial - self.min_lesion_count
 
-        percent = (reduction / total_possible) * 100 if total_possible > 0 else 0
-        change_pct = (reduction / m.lesion_count_initial) * 100 if m.lesion_count_initial > 0 else 0
+        # 如果病灶数增加（恶化），恢复进度为0或负数
+        if reduction < 0:
+            percent = 0
+            change_pct = (abs(reduction) / m.lesion_count_initial) * 100
+            change_str = f"+{change_pct:.0f}% (恶化)"
+        else:
+            percent = (reduction / total_possible) * 100 if total_possible > 0 else 0
+            change_pct = (reduction / m.lesion_count_initial) * 100 if m.lesion_count_initial > 0 else 0
+            change_str = f"-{change_pct:.0f}%"
 
         return {
             "percent": round(percent, 1),
-            "change_str": f"-{change_pct:.0f}%",
+            "change_str": change_str,
             "weight": 0.4
         }
 
@@ -218,25 +225,34 @@ class AdvancedRecoveryCalculator:
         reduction = m.area_percent_initial - m.area_percent_current
         total_possible = m.area_percent_initial - self.min_area_percent
 
-        percent = (reduction / total_possible) * 100 if total_possible > 0 else 0
-        change_pct = (reduction / m.area_percent_initial) * 100 if m.area_percent_initial > 0 else 0
+        # 如果面积增加（恶化），恢复进度为0或负数
+        if reduction < 0:
+            percent = 0
+            change_pct = (abs(reduction) / m.area_percent_initial) * 100
+            change_str = f"+{change_pct:.0f}% (恶化)"
+        else:
+            percent = (reduction / total_possible) * 100 if total_possible > 0 else 0
+            change_pct = (reduction / m.area_percent_initial) * 100 if m.area_percent_initial > 0 else 0
+            change_str = f"-{change_pct:.0f}%"
 
         return {
             "percent": round(percent, 1),
-            "change_str": f"-{change_pct:.0f}%",
+            "change_str": change_str,
             "weight": 0.35
         }
 
     def _calculate_severity_recovery(self, m: RecoveryMetrics) -> Dict[str, Any]:
         """计算严重度恢复进度"""
-        if m.severity_initial == m.severity_current:
+        if m.severity_current > m.severity_initial:
+            # 严重度增加（恶化）
+            percent = 0
+        elif m.severity_initial == m.severity_current:
             percent = 50 if m.severity_current > 1 else 100
-        elif m.severity_current < m.severity_initial:
+        else:
+            # 严重度降低（好转）
             total_drop = m.severity_initial - 1
             actual_drop = m.severity_initial - m.severity_current
-            percent = (actual_drop / total_drop) * 100
-        else:
-            percent = 0
+            percent = (actual_drop / total_drop) * 100 if total_drop > 0 else 100
 
         return {
             "percent": round(percent, 1),

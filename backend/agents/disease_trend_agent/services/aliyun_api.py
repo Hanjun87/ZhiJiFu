@@ -12,8 +12,9 @@ class AliyunAPIService:
     """阿里云API服务"""
     
     def __init__(self):
-        self.api_key = settings.ALIYUN_API_KEY
-        self.endpoint = settings.ALIYUN_API_ENDPOINT
+        # 使用 get_api_key() 方法获取API Key
+        self.api_key = settings.get_api_key() if hasattr(settings, 'get_api_key') else None
+        self.endpoint = None  # 不再使用旧的端点配置
     
     def get_analysis_history(
         self,
@@ -34,32 +35,9 @@ class AliyunAPIService:
         Returns:
             分析记录列表
         """
-        # TODO: 实现实际的API调用
-        # 这里返回模拟数据用于开发测试
-        return [
-            {
-                "date": "2026-03-01",
-                "image_url": "https://example.com/image1.jpg",
-                "analysis_result": {
-                    "disease": disease_type or "acne",
-                    "severity": 2,
-                    "confidence": 0.85,
-                    "lesion_count": 15,
-                    "affected_area_percent": 12.5
-                }
-            },
-            {
-                "date": "2026-03-15",
-                "image_url": "https://example.com/image2.jpg",
-                "analysis_result": {
-                    "disease": disease_type or "acne",
-                    "severity": 1,
-                    "confidence": 0.88,
-                    "lesion_count": 8,
-                    "affected_area_percent": 8.0
-                }
-            }
-        ]
+        # TODO: 实现实际的API调用，从数据库获取真实历史记录
+        # 目前返回空数组，让前端使用本地计算的数据
+        return []
     
     def get_user_profile(self, user_id: str) -> Dict[str, Any]:
         """
