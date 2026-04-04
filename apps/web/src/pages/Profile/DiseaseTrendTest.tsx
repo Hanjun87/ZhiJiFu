@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   ArrowLeft,
   Bot,
@@ -19,9 +21,14 @@ import {
   Droplets,
   Utensils,
   Moon,
-  Shield
+  Shield,
+  Send,
+  User,
+  X,
+  MessageCircle,
+  Trash2
 } from 'lucide-react';
-import { DiseaseTrendPayload, DiseaseTrendResult } from '../../modules/skin/api';
+import { DiseaseTrendPayload, DiseaseTrendResult, streamTrendChatWithAIDoctor, TrendChatMessage } from '../../modules/skin/api';
 
 interface DiseaseTrendTestProps {
   apiBaseUrl: string;
@@ -29,6 +36,18 @@ interface DiseaseTrendTestProps {
 }
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || '';
+
+// localStorage key for chat history
+const getChatStorageKey = (userId: string) => `disease_trend_chat_history_${userId}`;
+
+// 获取初始AI消息
+const getInitialAIChat = (): TrendChatMessage[] => [
+  {
+    role: 'ai',
+    content: '您好！我是您的AI趋势诊断医生。我已经分析了您的疾病趋势数据，可以为您解答关于病情变化、恢复预期和护理建议的问题。请问有什么可以帮助您的？',
+    time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+  }
+];
 
 // 护理建议类别图标映射
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -69,6 +88,67 @@ export default function DiseaseTrendTest({ apiBaseUrl, onBack }: DiseaseTrendTes
   const [trendOption, setTrendOption] = useState<'improving' | 'worsening' | 'stable'>('improving');
   const [expandedAdvice, setExpandedAdvice] = useState<string[]>([]);
   const [showRecoveryDetails, setShowRecoveryDetails] = useState(false);
+
+  // AI对话相关状态
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+  const [chatMessages, setChatMessages] = useState<TrendChatMessage[]>(getInitialAIChat());
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const userId = 'test_user_001'; // 当前用户ID
+
+  // 从 localStorage 加载聊天历史
+  useEffect(() => {
+    const chatStorageKey = getChatStorageKey(userId);
+    const cachedChat = localStorage.getItem(chatStorageKey);
+    if (cachedChat) {
+      try {
+        const parsed = JSON.parse(cachedChat);
+        if (parsed.messages && parsed.messages.length > 0) {
+          setChatMessages(parsed.messages);
+        }
+      } catch (e) {
+        console.error('Failed to parse cached chat history', e);
+        setChatMessages(getInitialAIChat());
+      }
+    }
+  }, [userId]);
+
+  // 保存聊天历史到 localStorage
+  const saveChatHistory = (messages: TrendChatMessage[]) => {
+    const chatStorageKey = getChatStorageKey(userId);
+    localStorage.setItem(chatStorageKey, JSON.stringify({
+      messages: messages,
+      timestamp: Date.now()
+    }));
+  };
+
+  // 更新聊天消息并保存到 localStorage
+  const updateChatMessages = (newMessages: TrendChatMessage[] | ((prev: TrendChatMessage[]) => TrendChatMessage[])) => {
+    setChatMessages(prev => {
+      const updated = typeof newMessages === 'function' ? newMessages(prev) : newMessages;
+      // 保存到 localStorage（排除加载中的空消息）
+      const messagesToSave = updated.filter(m => m.content || m.role === 'ai');
+      if (messagesToSave.length > 0) {
+        saveChatHistory(messagesToSave);
+      }
+      return updated;
+    });
+  };
+
+  // 清除聊天历史
+  const clearChatHistory = () => {
+    const chatStorageKey = getChatStorageKey(userId);
+    localStorage.removeItem(chatStorageKey);
+    setChatMessages(getInitialAIChat());
+  };
+
+  // 自动滚动到最新消息
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
 
   const handleTest = async () => {
     setLoading(true);
@@ -169,6 +249,104 @@ export default function DiseaseTrendTest({ apiBaseUrl, onBack }: DiseaseTrendTes
         return '保持稳定';
       default:
         return '趋势不明';
+    }
+  };
+
+  // 发送AI消息
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || isAiTyping) return;
+
+    const userMessage = chatInput.trim();
+    const currentTime = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+    // 添加用户消息到列表
+    const newUserMessage: TrendChatMessage = {
+      role: 'user',
+      content: userMessage,
+      time: currentTime
+    };
+
+    const updatedMessagesWithUser = [...chatMessages, newUserMessage];
+    updateChatMessages(updatedMessagesWithUser);
+    setChatInput('');
+    setIsAiTyping(true);
+
+    // 创建AI消息占位符
+    const aiPlaceholder: TrendChatMessage = {
+      role: 'ai',
+      content: '',
+      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+    };
+    const messagesWithPlaceholder = [...updatedMessagesWithUser, aiPlaceholder];
+    setChatMessages(messagesWithPlaceholder);
+
+    try {
+      // 使用流式API
+      await streamTrendChatWithAIDoctor(
+        BACKEND_URL,
+        {
+          userId: 'test_user_001',
+          message: userMessage,
+          chatHistory: chatMessages,
+          trendResult: result?.result
+        },
+        {
+          onChunk: (chunk) => {
+            // 实时更新AI消息
+            setChatMessages(prev => {
+              const updated = [...prev];
+              const lastMsg = updated[updated.length - 1];
+              if (lastMsg && lastMsg.role === 'ai') {
+                updated[updated.length - 1] = {
+                  ...lastMsg,
+                  content: lastMsg.content + chunk
+                };
+              }
+              return updated;
+            });
+          },
+          onError: (error) => {
+            // 更新最后一条AI消息为错误信息
+            const errorMessages = [...messagesWithPlaceholder];
+            const lastMsg = errorMessages[errorMessages.length - 1];
+            if (lastMsg && lastMsg.role === 'ai') {
+              errorMessages[errorMessages.length - 1] = {
+                ...lastMsg,
+                content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
+              };
+            }
+            updateChatMessages(errorMessages);
+          },
+          onDone: () => {
+            // 流式传输完成，保存完整对话
+            setChatMessages(prev => {
+              updateChatHistory(prev);
+              return prev;
+            });
+          }
+        }
+      );
+    } catch (error) {
+      // 更新最后一条AI消息为错误信息
+      const errorMessages = [...messagesWithPlaceholder];
+      const lastMsg = errorMessages[errorMessages.length - 1];
+      if (lastMsg && lastMsg.role === 'ai') {
+        errorMessages[errorMessages.length - 1] = {
+          ...lastMsg,
+          content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
+        };
+      }
+      updateChatMessages(errorMessages);
+    } finally {
+      setIsAiTyping(false);
+    }
+  };
+
+  // 辅助函数：保存聊天历史（用于onDone回调）
+  const updateChatHistory = (messages: TrendChatMessage[]) => {
+    const messagesToSave = messages.filter(m => m.content || m.role === 'ai');
+    if (messagesToSave.length > 0) {
+      saveChatHistory(messagesToSave);
     }
   };
 
@@ -538,6 +716,159 @@ export default function DiseaseTrendTest({ apiBaseUrl, onBack }: DiseaseTrendTes
                       {JSON.stringify(result.result.final_report, null, 2)}
                     </pre>
                   </div>
+                )}
+
+                {/* AI医生对话面板 */}
+                <AnimatePresence>
+                  {showAiChat && (
+                    <motion.section
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 20 }}
+                      transition={{ duration: 0.3 }}
+                      className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden"
+                      style={{ height: '400px' }}
+                    >
+                      {/* AI医生标题栏 */}
+                      <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100 bg-gray-50/50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-9 h-9 bg-purple-100 rounded-full flex items-center justify-center">
+                            <Bot size={18} className="text-purple-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-900 text-sm">AI 趋势诊断医生</h3>
+                            <div className="flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                              <span className="text-[10px] text-gray-400">在线</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {/* 清除历史按钮 */}
+                          {chatMessages.length > 1 && (
+                            <motion.button
+                              whileTap={{ scale: 0.95 }}
+                              onClick={clearChatHistory}
+                              title="清除对话历史"
+                              className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-red-100 transition-colors group"
+                            >
+                              <Trash2 size={14} className="text-gray-400 group-hover:text-red-500" />
+                            </motion.button>
+                          )}
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setShowAiChat(false)}
+                            className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                          >
+                            <X size={16} className="text-gray-400" />
+                          </motion.button>
+                        </div>
+                      </div>
+
+                      {/* 聊天消息区域 - 可独立滚动 */}
+                      <div ref={chatContainerRef} className="overflow-y-auto px-4 py-3" style={{ height: '280px' }}>
+                        <div className="space-y-3">
+                          {chatMessages.map((msg, idx) => (
+                            <div key={idx} className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                                msg.role === 'user' ? 'bg-gray-200' : 'bg-purple-100'
+                              }`}>
+                                {msg.role === 'user' ? <User size={14} className="text-gray-600" /> : <Bot size={14} className="text-purple-600" />}
+                              </div>
+                              <div className={`max-w-[75%] ${msg.role === 'user' ? 'text-right' : ''}`}>
+                                <div className={`inline-block px-3 py-2 rounded-2xl text-sm ${
+                                  msg.role === 'user'
+                                    ? 'bg-blue-500 text-white rounded-br-md'
+                                    : 'bg-gray-100 text-gray-700 rounded-bl-md'
+                                }`}>
+                                  {msg.role === 'user' ? (
+                                    msg.content
+                                  ) : (
+                                    <ReactMarkdown
+                                      remarkPlugins={[remarkGfm]}
+                                      components={{
+                                        p: ({node, ...props}) => <p className="mb-1.5 last:mb-0 leading-relaxed" {...props} />,
+                                        strong: ({node, ...props}) => <strong className="font-bold text-gray-900" {...props} />,
+                                        ul: ({node, ...props}) => <ul className="list-disc pl-4 mb-1.5 last:mb-0 space-y-0.5" {...props} />,
+                                        ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-1.5 last:mb-0 space-y-0.5" {...props} />,
+                                        li: ({node, ...props}) => <li className="pl-0.5" {...props} />,
+                                        blockquote: ({node, ...props}) => <blockquote className="border-l-2 border-purple-300 pl-3 text-gray-600 italic my-1.5 py-0.5 bg-purple-50/50 rounded-r-lg" {...props} />
+                                      }}
+                                    >
+                                      {msg.content}
+                                    </ReactMarkdown>
+                                  )}
+                                </div>
+                                <p className="text-[10px] text-gray-400 mt-1">{msg.time}</p>
+                              </div>
+                            </div>
+                          ))}
+                          {/* AI正在输入指示器 */}
+                          {isAiTyping && (
+                            <div className="flex gap-2">
+                              <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-purple-100">
+                                <Bot size={14} className="text-purple-600" />
+                              </div>
+                              <div className="max-w-[75%]">
+                                <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-gray-100 text-gray-700 rounded-bl-md">
+                                  <div className="flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                    <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 输入框区域 */}
+                      <div className="px-4 pt-2 pb-3 bg-white border-t border-gray-100">
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={chatInput}
+                            onChange={(e) => setChatInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                            placeholder={isAiTyping ? "AI正在思考..." : "输入您的问题..."}
+                            disabled={isAiTyping}
+                            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:outline-none focus:border-purple-400 bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          />
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={handleSendMessage}
+                            disabled={isAiTyping || !chatInput.trim()}
+                            className="w-10 h-10 bg-purple-500 rounded-xl flex items-center justify-center text-white shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <Send size={16} />
+                          </motion.button>
+                        </div>
+                      </div>
+                    </motion.section>
+                  )}
+                </AnimatePresence>
+
+                {/* AI医生按钮 */}
+                {result.success && result.result && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex justify-center"
+                  >
+                    <motion.button
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setShowAiChat(!showAiChat)}
+                      className={`py-3 px-6 rounded-xl font-semibold text-sm flex items-center gap-2 transition-colors ${
+                        showAiChat
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-purple-500 text-white shadow-md shadow-purple-200'
+                      }`}
+                    >
+                      <MessageCircle size={18} />
+                      <span>{showAiChat ? '关闭AI医生' : '咨询AI趋势医生'}</span>
+                    </motion.button>
+                  </motion.div>
                 )}
               </>
             ) : (

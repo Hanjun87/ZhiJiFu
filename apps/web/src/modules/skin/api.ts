@@ -80,3 +80,101 @@ export async function diseaseTrendAnalysisRequest(apiBaseUrl: string, payload: D
     body: JSON.stringify(payload),
   });
 }
+
+// 疾病趋势AI医生流式对话
+export interface TrendChatMessage {
+  role: 'user' | 'ai';
+  content: string;
+  time: string;
+}
+
+export interface TrendChatRequest {
+  userId: string;
+  message: string;
+  chatHistory?: TrendChatMessage[];
+  trendResult?: DiseaseTrendResult['result'];
+}
+
+export type TrendStreamingChunkHandler = (chunk: string) => void;
+export type TrendStreamingErrorHandler = (error: string) => void;
+export type TrendStreamingDoneHandler = () => void;
+
+export interface TrendStreamChatOptions {
+  onChunk: TrendStreamingChunkHandler;
+  onError?: TrendStreamingErrorHandler;
+  onDone?: TrendStreamingDoneHandler;
+}
+
+/**
+ * 疾病趋势AI医生流式对话
+ * @param apiBaseUrl API基础URL
+ * @param params 对话请求参数
+ * @param options 回调选项
+ */
+export async function streamTrendChatWithAIDoctor(
+  apiBaseUrl: string,
+  params: TrendChatRequest,
+  options: TrendStreamChatOptions
+): Promise<void> {
+  const { onChunk, onError, onDone } = options;
+  const base = apiBaseUrl.replace(/\/$/, '');
+
+  try {
+    const response = await fetch(`${base}/api/disease-trend-chat-stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      throw new Error(`请求失败: ${response.status}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('无法读取响应流');
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+
+      if (done) {
+        onDone?.();
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              onChunk(parsed.content);
+            }
+            if (parsed.done) {
+              onDone?.();
+              return;
+            }
+            if (parsed.error) {
+              onError?.(parsed.error);
+              return;
+            }
+          } catch (e) {
+            // 忽略解析错误
+          }
+        }
+      }
+    }
+  } catch (error) {
+    onError?.(error instanceof Error ? error.message : '未知错误');
+  }
+}

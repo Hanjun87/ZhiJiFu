@@ -570,12 +570,22 @@ def ai_doctor_chat(request):
 
 
 @csrf_exempt
-@require_http_methods(["POST"])
 def ai_doctor_chat_stream(request):
     """AI智能医生流式对话接口 - 基于疾病档案历史记录回答用户问题"""
     from django.http import StreamingHttpResponse
     import json
     import time
+    
+    # 处理 CORS 预检请求
+    if request.method == 'OPTIONS':
+        response = StreamingHttpResponse('', content_type='text/event-stream')
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+    
+    if request.method != 'POST':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
 
     def generate():
         try:
@@ -630,7 +640,87 @@ def ai_doctor_chat_stream(request):
             traceback.print_exc()
             yield "data: " + json.dumps({"error": str(exc)}) + "\n\n"
 
-    return StreamingHttpResponse(generate(), content_type='text/event-stream')
+    response = StreamingHttpResponse(generate(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
+
+
+# ==================== 皮肤保养Agent API ====================
+
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
+
+from agents.skincare_agent.core.graph import get_workflow as get_skincare_workflow
+from agents.skincare_agent.core.state import SkincareState
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def skincare_analysis(request):
+    """皮肤保养Agent - 基于皮肤表现分析生成个性化护肤方案"""
+    try:
+        # 调试：确保环境变量已设置
+        if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
+            os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+            os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+
+        payload = parse_json_body(request)
+
+        user_id = payload.get('userId', 'user_001')
+        user_input = payload.get('note', '')
+        entry_title = payload.get('entryTitle', '')
+        skin_metrics = payload.get('skinMetrics', [])
+        current_products = payload.get('careItems', [])
+        entry_date = payload.get('entryDate', timezone.now().isoformat())
+
+        print(f"[Skincare Agent] 用户ID: {user_id}")
+        print(f"[Skincare Agent] 日记标题: {entry_title}")
+        print(f"[Skincare Agent] 皮肤指标数: {len(skin_metrics)}")
+        print(f"[Skincare Agent] 当前产品数: {len(current_products)}")
+
+        # 构建初始状态
+        initial_state: SkincareState = {
+            "user_id": user_id,
+            "user_input": user_input,
+            "current_products": current_products,
+            "skin_image": None,
+            "skin_metrics": skin_metrics,
+            "entry_date": entry_date,
+            "entry_title": entry_title,
+            "skin_profile": None,
+            "rag_queries": None,
+            "rag_results": None,
+            "ingredient_assessment": None,
+            "routine": None,
+            "care_advice": None,
+            "ai_verdict": None,
+            "final_output": None
+        }
+
+        # 获取工作流并执行
+        app = get_skincare_workflow()
+        config = {"configurable": {"thread_id": user_id}}
+        result = app.invoke(initial_state, config=config)
+
+        return JsonResponse({
+            "success": True,
+            "result": {
+                "skin_profile": result.get("skin_profile"),
+                "care_advice": result.get("care_advice", []),
+                "ai_verdict": result.get("ai_verdict", "stable"),
+                "ai_verdict_reason": result.get("ai_verdict_reason", ""),
+                "routine": result.get("routine"),
+                "ingredient_assessment": result.get("ingredient_assessment")
+            }
+        })
+
+    except ValueError as exc:
+        return JsonResponse({"message": str(exc)}, status=400)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({"message": str(exc)}, status=500)
 
 
 # ==================== 疾病趋势诊断Agent API ====================
@@ -769,3 +859,209 @@ def disease_trend_analysis(request):
         import traceback
         traceback.print_exc()
         return JsonResponse({"message": str(exc)}, status=500)
+
+
+@csrf_exempt
+def disease_trend_chat_stream(request):
+    """疾病趋势诊断Agent AI医生流式对话接口 - 基于趋势分析结果回答用户问题"""
+    from django.http import StreamingHttpResponse
+    import json
+    import time
+    
+    # 处理 CORS 预检请求
+    if request.method == 'OPTIONS':
+        response = StreamingHttpResponse('', content_type='text/event-stream')
+        response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        return response
+    
+    if request.method != 'POST':
+        return JsonResponse({"error": "Method not allowed"}, status=405)
+
+    def generate():
+        try:
+            if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
+                os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+                os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
+
+            payload = parse_json_body(request)
+
+            user_id = payload.get('userId', 'user_001')
+            message = payload.get('message', '')
+            chat_history = payload.get('chatHistory', [])
+            trend_result = payload.get('trendResult', {})
+
+            if not message:
+                yield "data: " + json.dumps({"error": "消息不能为空"}) + "\n\n"
+                return
+
+            # 构建趋势分析上下文
+            trend_context = _build_trend_context(trend_result)
+            
+            # 构建系统提示词
+            system_prompt = _build_disease_trend_doctor_prompt(trend_context)
+            
+            # 调用流式LLM
+            for chunk in _call_llm_stream(system_prompt, message, chat_history):
+                yield "data: " + json.dumps({"content": chunk}) + "\n\n"
+
+            yield "data: " + json.dumps({"done": True}) + "\n\n"
+
+        except Exception as exc:
+            import traceback
+            traceback.print_exc()
+            yield "data: " + json.dumps({"error": str(exc)}) + "\n\n"
+
+    response = StreamingHttpResponse(generate(), content_type='text/event-stream')
+    response['Cache-Control'] = 'no-cache'
+    response['X-Accel-Buffering'] = 'no'
+    return response
+
+
+def _build_trend_context(trend_result: dict) -> str:
+    """构建趋势分析上下文"""
+    if not trend_result:
+        return "暂无趋势分析数据"
+    
+    context_parts = []
+    
+    # 最终诊断结果
+    final_verdict = trend_result.get('final_verdict', 'unknown')
+    verdict_map = {
+        'better': '好转',
+        'worse': '恶化',
+        'stable': '稳定',
+        'insufficient': '数据不足'
+    }
+    context_parts.append(f"诊断结果: {verdict_map.get(final_verdict, final_verdict)}")
+    
+    # 恢复进度
+    recovery_progress = trend_result.get('recovery_progress', {})
+    if recovery_progress:
+        recovery_percent = recovery_progress.get('recovery_percent', 0)
+        progress_changed = recovery_progress.get('progress_changed', 'stable')
+        estimated_days = recovery_progress.get('estimated_days_to_full_recovery')
+        
+        context_parts.append(f"恢复进度: {recovery_percent}%")
+        context_parts.append(f"趋势变化: {progress_changed}")
+        if estimated_days is not None:
+            context_parts.append(f"预计完全恢复还需: {estimated_days}天")
+    
+    # 告警信息
+    alerts = trend_result.get('alerts', [])
+    if alerts:
+        context_parts.append(f"告警信息: {'; '.join(alerts)}")
+    
+    # 护理建议摘要
+    care_advice = trend_result.get('care_advice', [])
+    if care_advice:
+        advice_titles = [a.get('title', '') for a in care_advice[:3]]
+        context_parts.append(f"护理建议: {'、'.join(advice_titles)}")
+    
+    return "\n".join(context_parts)
+
+
+def _build_disease_trend_doctor_prompt(trend_context: str) -> str:
+    """构建疾病趋势AI医生系统提示词"""
+    return f"""你是一位专业的皮肤科医生AI助手，名为"知己肤AI医生"。你正在基于用户的疾病趋势分析结果为其提供个性化咨询。
+
+## 当前用户的趋势分析数据
+{trend_context}
+
+## 核心指令（必须遵守）
+1. **基于数据回答**：每次回答都必须引用上述趋势分析数据，不要给通用模板回复！
+2. **解读趋势**：帮助用户理解病情变化趋势（好转/恶化/稳定）
+3. **预估恢复时间**：基于恢复进度给出合理的恢复预期
+4. **个性化建议**：根据具体趋势给出针对性的护理建议
+5. **风险提示**：如果趋势显示恶化，必须强烈建议就医
+
+## 输出格式要求
+- **必须使用Markdown格式输出**
+- 使用 **加粗** 强调重要信息（如关键数据、趋势变化）
+- 使用有序列表(1. 2. 3.)列出建议步骤
+- 使用引用块(>)突出警告或重要提醒
+- 段落之间保持简洁，不要过于冗长
+
+## 禁止事项
+- 不要说"我已收到您的问题"这种通用开场白
+- 不要编造用户没有的症状或数据
+- 不要推荐具体药物名称（可以说"外用激素药膏"但不能说"地奈德乳膏"）
+
+## 回答风格示例
+根据您的趋势分析数据，您的病情目前**{{诊断结果}}**，恢复进度为**{{恢复进度}}%**。
+
+针对您的问题，我的建议是：
+1. **{{具体建议1，与趋势数据相关}}**
+2. **{{具体建议2}}**
+
+> 预计**{{时间范围}}**内可以看到明显改善。如果出现**{{危险信号}}**，请及时就医。
+
+现在请回答用户的问题："""
+
+
+def _call_llm_stream(system_prompt: str, user_message: str, chat_history: list):
+    """流式调用大语言模型生成回复"""
+    import requests
+    import json
+    
+    # 构建消息列表
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    # 添加历史对话
+    for msg in chat_history[-5:]:  # 最近5轮对话
+        if msg.get("role") == "user":
+            messages.append({"role": "user", "content": msg.get("content", "")})
+        elif msg.get("role") == "ai":
+            messages.append({"role": "assistant", "content": msg.get("content", "")})
+    
+    # 添加当前消息
+    messages.append({"role": "user", "content": user_message})
+    
+    # 调用阿里云百炼API - 流式
+    api_key = os.environ.get('DASHSCOPE_API_KEY') or os.environ.get('BAILIAN_API_KEY')
+    if not api_key:
+        yield "抱歉，AI服务未配置，请联系管理员。"
+        return
+    
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": "qwen-plus",
+        "messages": messages,
+        "temperature": 0.7,
+        "max_tokens": 800,
+        "stream": True
+    }
+    
+    try:
+        response = requests.post(
+            "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=60,
+            stream=True
+        )
+        
+        if response.status_code == 200:
+            for line in response.iter_lines():
+                if line:
+                    line_text = line.decode('utf-8')
+                    if line_text.startswith('data: '):
+                        data = line_text[6:]
+                        if data == '[DONE]':
+                            break
+                        try:
+                            json_data = json.loads(data)
+                            content = json_data.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            if content:
+                                yield content
+                        except json.JSONDecodeError:
+                            continue
+        else:
+            yield f"抱歉，服务暂时不可用（{response.status_code}），请稍后重试。"
+    except Exception as e:
+        yield f"抱歉，网络连接出现问题：{str(e)}"

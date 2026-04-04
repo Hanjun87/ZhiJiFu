@@ -49,30 +49,51 @@ const OLDER_RECORDS = [
 const SAMPLE_DIARY_ENTRIES = [
   {
     id: '1',
-    date: "01月15日",
+    date: "01 月 15 日",
     time: "09:30",
     title: "今日皮肤状况",
     status: "良好" as const,
     image: "https://picsum.photos/seed/diary1/200/200",
+    skinMetrics: [
+      { label: '色斑', value: 20, detail: '色斑轻微，皮肤整体均匀' },
+      { label: '黑头', value: 35, detail: 'T 区有少量黑头' },
+      { label: '眼袋', value: 25, detail: '眼袋轻微' },
+      { label: '黑眼圈', value: 30, detail: '黑眼圈轻度，注意休息' },
+      { label: '痘痘', value: 15, detail: '皮肤状态良好，无明显痘痘' },
+    ],
   },
   {
     id: '2',
-    date: "01月14日",
+    date: "01 月 14 日",
     time: "18:15",
     title: "晒后修复记录",
     status: "恢复中" as const,
     image: "https://picsum.photos/seed/diary2/200/200",
+    skinMetrics: [
+      { label: '色斑', value: 45, detail: '晒后色斑加重，需加强防晒' },
+      { label: '黑头', value: 40, detail: '毛孔略显粗大' },
+      { label: '眼袋', value: 35, detail: '眼部稍有浮肿' },
+      { label: '黑眼圈', value: 40, detail: '晒后色素沉淀' },
+      { label: '痘痘', value: 20, detail: '有轻微晒伤泛红' },
+    ],
   },
 ];
 
 const OLDER_DIARY_ENTRIES = [
   {
     id: '3',
-    date: "01月10日",
+    date: "01 月 10 日",
     time: "20:00",
     title: "冬季保湿打卡",
     status: "已结束" as const,
     image: "https://picsum.photos/seed/diary3/200/200",
+    skinMetrics: [
+      { label: '色斑', value: 30, detail: '色斑稳定' },
+      { label: '黑头', value: 50, detail: '冬季皮肤干燥，黑头明显' },
+      { label: '眼袋', value: 28, detail: '眼袋轻微' },
+      { label: '黑眼圈', value: 35, detail: '作息规律，黑眼圈改善' },
+      { label: '痘痘', value: 18, detail: '皮肤状态稳定' },
+    ],
   },
 ];
 

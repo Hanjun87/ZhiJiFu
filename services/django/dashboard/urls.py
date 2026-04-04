@@ -10,12 +10,16 @@ urlpatterns = [
     path("api/analyze-skin", views.analyze_skin, name="analyze-skin"),
     # 记录皮肤状态
     path("api/analyze-skin-record", views.analyze_skin_record, name="analyze-skin-record"),
+    # 皮肤保养Agent
+    path("api/skincare-analysis", views.skincare_analysis, name="skincare-analysis"),
     # 疾病趋势诊断Agent
     path("api/disease-trend-analysis", views.disease_trend_analysis, name="disease-trend-analysis"),
     # AI智能医生对话
     path("api/ai-doctor-chat", views.ai_doctor_chat, name="ai-doctor-chat"),
     # AI智能医生流式对话
     path("api/ai-doctor-chat-stream", views.ai_doctor_chat_stream, name="ai-doctor-chat-stream"),
+    # 疾病趋势诊断Agent AI医生流式对话
+    path("api/disease-trend-chat-stream", views.disease_trend_chat_stream, name="disease-trend-chat-stream"),
     # 管理后台API
     path("api/admin/ai/providers", views.providers, name="providers"),
     path("api/admin/ai/config", views.config, name="config"),

@@ -18,6 +18,11 @@ interface DiaryDetailProps {
     title: string;
     status: string;
     image: string;
+    skinMetrics?: Array<{
+      label: string;
+      value: number;
+      detail: string;
+    }>;
   } | null;
   onBack: () => void;
   onNavigate?: (page: string) => void;
@@ -30,15 +35,6 @@ interface CareItem {
   checked: boolean;
 }
 
-// 皮肤指标数据
-const skinMetrics = [
-  { label: '色斑', value: 65, detail: '检测到轻度色斑，建议注意防晒并使用美白产品' },
-  { label: '黑头', value: 45, detail: 'T区有少量黑头，建议定期清洁毛孔' },
-  { label: '眼袋', value: 30, detail: '眼袋轻微，建议保证充足睡眠' },
-  { label: '黑眼圈', value: 55, detail: '黑眼圈中度，建议改善作息并使用眼霜' },
-  { label: '痘痘', value: 25, detail: '皮肤状态良好，无明显痘痘问题' },
-];
-
 // 环境数据
 const envData = {
   weather: '晴朗',
@@ -47,9 +43,15 @@ const envData = {
   uv: '中等',
 };
 
-// AI对话历史初始消息
-const INITIAL_AI_CHAT: ChatMessage[] = [
-  { role: 'ai', content: '您好！我是您的AI智能医生。我可以根据您的疾病档案历史记录，为您解答关于皮肤健康的问题。请问有什么可以帮助您的？', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) },
+// AI对话历史初始消息 - 根据当前皮肤档案动态生成
+const getInitialAIChat = (entryTitle?: string): ChatMessage[] => [
+  { 
+    role: 'ai', 
+    content: entryTitle 
+      ? `您好！我是您的AI护肤顾问。我已了解您的皮肤档案「${entryTitle}」，可以针对您的皮肤状况为您提供个性化的护肤建议和解答。请问有什么可以帮助您的？`
+      : '您好！我是您的AI护肤顾问。我可以根据您的皮肤档案，为您提供个性化的护肤建议和解答。请问有什么可以帮助您的？',
+    time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) 
+  },
 ];
 
 export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailProps) {
@@ -67,53 +69,145 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
   // AI对话相关状态
   const [showAiChat, setShowAiChat] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INITIAL_AI_CHAT);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [isAiTyping, setIsAiTyping] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // 从 localStorage 加载聊天历史
+  useEffect(() => {
+    if (entry) {
+      const chatStorageKey = `ai_chat_history_${entry.id}`;
+      const cachedChat = localStorage.getItem(chatStorageKey);
+      if (cachedChat) {
+        try {
+          const parsed = JSON.parse(cachedChat);
+          setChatMessages(parsed.messages || getInitialAIChat(entry.title));
+        } catch (e) {
+          console.error('Failed to parse cached chat history', e);
+          setChatMessages(getInitialAIChat(entry.title));
+        }
+      } else {
+        setChatMessages(getInitialAIChat(entry.title));
+      }
+    }
+  }, [entry?.id]);
+
+  // 保存聊天历史到 localStorage
+  const saveChatHistory = (messages: ChatMessage[]) => {
+    if (entry) {
+      const chatStorageKey = `ai_chat_history_${entry.id}`;
+      localStorage.setItem(chatStorageKey, JSON.stringify({
+        messages: messages,
+        timestamp: Date.now()
+      }));
+    }
+  };
+
+  // 更新聊天消息并保存到 localStorage
+  const updateChatMessages = (newMessages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    setChatMessages(prev => {
+      const updated = typeof newMessages === 'function' ? newMessages(prev) : newMessages;
+      // 保存到 localStorage（排除加载中的空消息）
+      const messagesToSave = updated.filter(m => m.content || m.role === 'ai');
+      if (messagesToSave.length > 0) {
+        saveChatHistory(messagesToSave);
+      }
+      return updated;
+    });
+  };
 
   // 从后端获取的护理建议和AI结论
   const [careAdvice, setCareAdvice] = useState<any[]>([]);
   const [aiVerdict, setAiVerdict] = useState<string>('stable');
   const [isFetchingAdvice, setIsFetchingAdvice] = useState(false);
 
+  // 从 localStorage 加载缓存的分析结果
   useEffect(() => {
     if (entry) {
-      const fetchTrend = async () => {
-        setIsFetchingAdvice(true);
+      const storageKey = `skincare_analysis_${entry.id}`;
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
         try {
-          const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8788').replace(/\/$/, '');
-          
-          // 提取疾病名称，如果日记标题不是疾病，则默认使用一个常见的皮肤病用于RAG匹配
-          const diseaseKeywords = ['皮炎', '湿疹', '痤疮', '痘', '癣', '擦伤', '烫伤', '红斑'];
-          let disease = '痤疮'; // 默认疾病
-          if (diseaseKeywords.some(keyword => entry.title.includes(keyword))) {
-            disease = entry.title;
-          }
+          const parsed = JSON.parse(cached);
+          setCareAdvice(parsed.careAdvice || []);
+          setAiVerdict(parsed.aiVerdict || 'stable');
+        } catch (e) {
+          console.error('Failed to parse cached analysis', e);
+        }
+      }
+    }
+  }, [entry]);
 
-          const response = await fetch(`${BACKEND_URL}/api/disease-trend-analysis`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: 'user_001',
-              targetDisease: disease,
-              timeWindowDays: 30,
-              trend: 'improving',
-              userProfile: { skin_type: 'mixed' }
-            }),
-          });
-          const data = await response.json();
-          if (data.success && data.result) {
-            const advice = data.result.care_advice || data.result.final_report?.care_advice || [];
-            setCareAdvice(advice);
-            setAiVerdict(data.result.final_verdict || 'stable');
+  // 保存分析结果到 localStorage
+  const saveAnalysisToStorage = (advice: any[], verdict: string) => {
+    if (entry) {
+      const storageKey = `skincare_analysis_${entry.id}`;
+      localStorage.setItem(storageKey, JSON.stringify({
+        careAdvice: advice,
+        aiVerdict: verdict,
+        timestamp: Date.now()
+      }));
+    }
+  };
+
+  // 获取皮肤保养分析的通用函数
+  const fetchSkincareAnalysis = async (forceRefresh = false) => {
+    if (!entry) return;
+    
+    // 如果有缓存且不强制刷新，则跳过
+    if (!forceRefresh) {
+      const storageKey = `skincare_analysis_${entry.id}`;
+      const cached = localStorage.getItem(storageKey);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          if (parsed.careAdvice && parsed.careAdvice.length > 0) {
+            setCareAdvice(parsed.careAdvice);
+            setAiVerdict(parsed.aiVerdict || 'stable');
+            return;
           }
         } catch (e) {
-          console.error('Failed to fetch trend data', e);
-        } finally {
-          setIsFetchingAdvice(false);
+          console.error('Failed to parse cached analysis', e);
         }
-      };
-      fetchTrend();
+      }
+    }
+
+    setIsFetchingAdvice(true);
+    try {
+      const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      
+      const response = await fetch(`${BACKEND_URL}/api/skincare-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: 'user_001',
+          entryTitle: entry.title,
+          note: '用户日记内容',
+          skinMetrics: entry.skinMetrics || [],
+          careItems: [],
+          entryDate: `${entry.date} ${entry.time}`,
+        }),
+      });
+      const data = await response.json();
+      if (data.success && data.result) {
+        const advice = data.result.care_advice || [];
+        const verdict = data.result.ai_verdict || 'stable';
+        setCareAdvice(advice);
+        setAiVerdict(verdict);
+        // 保存到 localStorage
+        saveAnalysisToStorage(advice, verdict);
+      }
+    } catch (e) {
+      console.error('Failed to fetch skincare analysis', e);
+    } finally {
+      setIsFetchingAdvice(false);
+    }
+  };
+
+  // 页面加载时获取分析（如果有缓存则使用缓存）
+  useEffect(() => {
+    if (entry) {
+      fetchSkincareAnalysis(false);
     }
   }, [entry]);
 
@@ -178,37 +272,33 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
       time: currentTime
     };
 
-    setChatMessages(prev => [...prev, newUserMessage]);
+    updateChatMessages(prev => [...prev, newUserMessage]);
     setChatInput('');
     setIsAiTyping(true);
 
-    // 创建AI消息占位符
-    const aiMessageId = Date.now().toString();
-    const aiPlaceholder: ChatMessage = {
-      role: 'ai',
-      content: '',
-      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-    };
-    setChatMessages(prev => [...prev, aiPlaceholder]);
-
     try {
-      // 提取疾病上下文
-      const diseaseKeywords = ['皮炎', '湿疹', '痤疮', '痘', '癣', '擦伤', '烫伤', '红斑'];
-      let diseaseContext = '';
-      if (entry && diseaseKeywords.some(keyword => entry.title.includes(keyword))) {
-        diseaseContext = entry.title;
+      // 构建皮肤档案上下文
+      let skinContext = '';
+      if (entry) {
+        const skinMetricsText = (entry.skinMetrics || [])
+          .map(m => `${m.label}(${m.value}/100)`)
+          .join('、');
+        const careAdviceText = careAdvice.length > 0 
+          ? careAdvice.map(a => a.title).join('、')
+          : '暂无';
+        skinContext = `皮肤日记标题：${entry.title}；皮肤指标：${skinMetricsText}；当前护理建议：${careAdviceText}`;
       }
 
       // 使用流式API
       await streamChatWithAIDoctor({
         userId: 'user_001',
         message: userMessage,
-        diseaseContext: diseaseContext,
+        diseaseContext: skinContext,
         chatHistory: chatMessages
       }, {
         onChunk: (chunk) => {
           // 实时更新AI消息
-          setChatMessages(prev => {
+          updateChatMessages(prev => {
             const updated = [...prev];
             const lastMsg = updated[updated.length - 1];
             if (lastMsg && lastMsg.role === 'ai') {
@@ -216,13 +306,19 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                 ...lastMsg,
                 content: lastMsg.content + chunk
               };
+            } else {
+              updated.push({
+                role: 'ai',
+                content: chunk,
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+              });
             }
             return updated;
           });
         },
         onError: (error) => {
           // 更新最后一条AI消息为错误信息
-          setChatMessages(prev => {
+          updateChatMessages(prev => {
             const updated = [...prev];
             const lastMsg = updated[updated.length - 1];
             if (lastMsg && lastMsg.role === 'ai') {
@@ -230,6 +326,12 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                 ...lastMsg,
                 content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
               };
+            } else {
+              updated.push({
+                role: 'ai',
+                content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。',
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+              });
             }
             return updated;
           });
@@ -240,7 +342,7 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
       });
     } catch (error) {
       // 更新最后一条AI消息为错误信息
-      setChatMessages(prev => {
+      updateChatMessages(prev => {
         const updated = [...prev];
         const lastMsg = updated[updated.length - 1];
         if (lastMsg && lastMsg.role === 'ai') {
@@ -248,6 +350,12 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
             ...lastMsg,
             content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
           };
+        } else {
+          updated.push({
+            role: 'ai',
+            content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。',
+            time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+          });
         }
         return updated;
       });
@@ -303,7 +411,7 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
 
             {/* Key Metrics Tags */}
             <div className="flex flex-wrap justify-center gap-2 mb-4">
-              {skinMetrics.map((metric) => (
+              {(entry.skinMetrics || []).map((metric) => (
                 <motion.button
                   key={metric.label}
                   whileTap={{ scale: 0.95 }}
@@ -330,11 +438,11 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                 <div className="flex items-center justify-between mb-1">
                   <span className="font-bold text-blue-700">{selectedMetric}</span>
                   <span className="text-xs text-blue-500">
-                    {skinMetrics.find(m => m.label === selectedMetric)?.value}%
+                    {(entry.skinMetrics || []).find(m => m.label === selectedMetric)?.value}%
                   </span>
                 </div>
                 <p className="text-xs text-blue-600 leading-relaxed">
-                  {skinMetrics.find(m => m.label === selectedMetric)?.detail}
+                  {(entry.skinMetrics || []).find(m => m.label === selectedMetric)?.detail}
                 </p>
               </motion.div>
             )}
@@ -360,38 +468,7 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
               <h2 className="font-bold text-gray-900">护理建议</h2>
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={async () => {
-                  setIsFetchingAdvice(true);
-                  try {
-                    const BACKEND_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8788').replace(/\/$/, '');
-                    const diseaseKeywords = ['皮炎', '湿疹', '痤疮', '痘', '癣', '擦伤', '烫伤', '红斑'];
-                    let disease = '痤疮';
-                    if (diseaseKeywords.some(keyword => entry.title.includes(keyword))) {
-                      disease = entry.title;
-                    }
-                    const response = await fetch(`${BACKEND_URL}/api/disease-trend-analysis`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        userId: 'user_001',
-                        targetDisease: disease,
-                        timeWindowDays: 30,
-                        trend: 'improving',
-                        userProfile: { skin_type: 'mixed' }
-                      }),
-                    });
-                    const data = await response.json();
-                    if (data.success && data.result) {
-                      const advice = data.result.care_advice || data.result.final_report?.care_advice || [];
-                      setCareAdvice(advice);
-                      setAiVerdict(data.result.final_verdict || 'stable');
-                    }
-                  } catch (e) {
-                    console.error('Failed to fetch trend data', e);
-                  } finally {
-                    setIsFetchingAdvice(false);
-                  }
-                }}
+                onClick={() => fetchSkincareAnalysis(true)}
                 disabled={isFetchingAdvice}
                 className="ml-auto px-2.5 py-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
               >
@@ -733,35 +810,49 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
               </div>
               <h3 className="font-bold text-gray-900">AI 点评</h3>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-4 border border-purple-100">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center shrink-0">
-                  <Bot size={20} className="text-purple-600" />
+            <div className="bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50 rounded-2xl p-5 border border-purple-100 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-100 to-indigo-100 rounded-2xl flex items-center justify-center shrink-0 shadow-sm">
+                  <Bot size={24} className="text-purple-600" />
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   {isFetchingAdvice ? (
-                    <p className="text-sm text-gray-700 leading-relaxed">正在分析皮肤数据并生成AI点评...</p>
+                    <div className="flex items-center gap-2 py-2">
+                      <div className="w-4 h-4 border-2 border-purple-300 border-t-purple-600 rounded-full animate-spin" />
+                      <p className="text-sm text-gray-600">AI正在分析皮肤数据并生成个性化点评...</p>
+                    </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-700 leading-relaxed">
+                      {/* AI点评内容 */}
+                      <p className="text-sm text-gray-700 leading-relaxed mb-4">
                         {aiVerdict === 'better' && '根据最近的数据分析，您的皮肤状况正在好转！继续保持当前的护肤习惯，注意巩固效果。'}
                         {aiVerdict === 'worse' && '近期皮肤状况有恶化趋势，建议您重点关注近期使用的护肤品或生活作息是否改变，如有不适请及时就医。'}
                         {aiVerdict === 'stable' && '皮肤状态保持稳定。建议继续保持当前的日常护理，注意防晒和基础保湿。'}
                         {aiVerdict === 'insufficient' && '根据今天的皮肤记录，整体状态良好。继续保持当前的护肤习惯，注意补水和防晒。'}
                       </p>
-                      <div className="mt-3 pt-3 border-t border-purple-100">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className="font-medium">建议重点：</span>
-                          {careAdvice.slice(0, 3).map((advice, idx) => (
-                            <span key={idx} className="px-2 py-0.5 bg-white rounded-full text-purple-600">{advice.title}</span>
+                      
+                      {/* 建议重点 - 竖向排列 */}
+                      <div className="mt-4 pt-4 border-t border-purple-100/60">
+                        <p className="text-xs font-semibold text-purple-700 mb-3 flex items-center gap-1.5">
+                          <Sparkles size={12} className="text-purple-500" />
+                          建议重点
+                        </p>
+                        <div className="space-y-2">
+                          {(careAdvice.length > 0 ? careAdvice.slice(0, 3) : [
+                            { title: '防晒', category: 'sunscreen' },
+                            { title: '保湿', category: 'moisturizing' },
+                            { title: '眼部护理', category: 'treatment' }
+                          ]).map((advice, idx) => (
+                            <div 
+                              key={idx} 
+                              className="flex items-center gap-2 text-xs text-gray-600 bg-white/70 backdrop-blur-sm rounded-lg px-3 py-2 border border-purple-50 hover:bg-white hover:shadow-sm transition-all"
+                            >
+                              <span className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 flex items-center justify-center text-[10px] font-bold text-purple-600 shrink-0">
+                                {idx + 1}
+                              </span>
+                              <span className="font-medium text-gray-700 truncate">{advice.title}</span>
+                            </div>
                           ))}
-                          {careAdvice.length === 0 && (
-                            <>
-                              <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">防晒</span>
-                              <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">保湿</span>
-                              <span className="px-2 py-0.5 bg-white rounded-full text-purple-600">眼部护理</span>
-                            </>
-                          )}
                         </div>
                       </div>
                     </>
@@ -797,13 +888,31 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                     </div>
                   </div>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowAiChat(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  <X size={16} className="text-gray-400" />
-                </motion.button>
+                <div className="flex items-center gap-1">
+                  {chatMessages.length > 1 && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (entry) {
+                          const chatStorageKey = `ai_chat_history_${entry.id}`;
+                          localStorage.removeItem(chatStorageKey);
+                          setChatMessages(getInitialAIChat(entry.title));
+                        }
+                      }}
+                      className="px-2 py-1 text-[10px] text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                      title="清空对话"
+                    >
+                      清空
+                    </motion.button>
+                  )}
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowAiChat(false)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                  >
+                    <X size={16} className="text-gray-400" />
+                  </motion.button>
+                </div>
               </div>
 
               {/* 聊天消息区域 - 可独立滚动 */}
@@ -844,23 +953,6 @@ export default function DiaryDetail({ entry, onBack, onNavigate }: DiaryDetailPr
                       </div>
                     </div>
                   ))}
-                  {/* AI正在输入指示器 */}
-                  {isAiTyping && (
-                    <div className="flex gap-2">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-purple-100">
-                        <Bot size={14} className="text-purple-600" />
-                      </div>
-                      <div className="max-w-[75%]">
-                        <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-gray-100 text-gray-700 rounded-bl-md">
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 

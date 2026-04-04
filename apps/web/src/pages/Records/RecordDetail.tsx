@@ -11,7 +11,7 @@ import {
 import { Record as SkinRecord } from '../../types';
 import BackButton from '../../components/common/BackButton';
 import { DiseaseTrendPayload, DiseaseTrendResult, CareAdviceItem } from '../../modules/skin/api';
-import { chatWithAIDoctor, ChatMessage } from '../../api/aiDoctor';
+import { chatWithAIDoctor, streamChatWithAIDoctor, ChatMessage } from '../../api/aiDoctor';
 
 interface RecordDetailProps {
   record: SkinRecord | null;
@@ -230,7 +230,7 @@ const getDiseaseHistory = (diseaseName: string): HistoryRecord[] => {
 };
 
 // 初始AI对话历史
-const INITIAL_AI_CHAT: ChatMessage[] = [
+const getInitialAIChat = (): ChatMessage[] => [
   { role: 'ai', content: '您好！我是您的AI智能医生。我可以根据您的疾病档案历史记录，为您解答关于皮肤健康的问题。请问有什么可以帮助您的？', time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) },
 ];
 
@@ -238,11 +238,54 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
   const [showAiChat, setShowAiChat] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(INITIAL_AI_CHAT);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(getInitialAIChat());
   const [isAiTyping, setIsAiTyping] = useState(false);
   const chatContainerRef = React.useRef<HTMLDivElement>(null);
   const [currentRecord, setCurrentRecord] = useState<SkinRecord | null>(record);
   const [currentHistory, setCurrentHistory] = useState<HistoryRecord | null>(null);
+
+  // 从 localStorage 加载聊天历史
+  useEffect(() => {
+    if (record) {
+      const chatStorageKey = `disease_chat_history_${record.id}`;
+      const cachedChat = localStorage.getItem(chatStorageKey);
+      if (cachedChat) {
+        try {
+          const parsed = JSON.parse(cachedChat);
+          setChatMessages(parsed.messages || getInitialAIChat());
+        } catch (e) {
+          console.error('Failed to parse cached chat history', e);
+          setChatMessages(getInitialAIChat());
+        }
+      } else {
+        setChatMessages(getInitialAIChat());
+      }
+    }
+  }, [record?.id]);
+
+  // 保存聊天历史到 localStorage
+  const saveChatHistory = (messages: ChatMessage[]) => {
+    if (record) {
+      const chatStorageKey = `disease_chat_history_${record.id}`;
+      localStorage.setItem(chatStorageKey, JSON.stringify({
+        messages: messages,
+        timestamp: Date.now()
+      }));
+    }
+  };
+
+  // 更新聊天消息并保存到 localStorage
+  const updateChatMessages = (newMessages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => {
+    setChatMessages(prev => {
+      const updated = typeof newMessages === 'function' ? newMessages(prev) : newMessages;
+      // 保存到 localStorage（排除加载中的空消息）
+      const messagesToSave = updated.filter(m => m.content || m.role === 'ai');
+      if (messagesToSave.length > 0) {
+        saveChatHistory(messagesToSave);
+      }
+      return updated;
+    });
+  };
 
   // 趋势诊断Agent相关状态
   const [trendResult, setTrendResult] = useState<DiseaseTrendResult | null>(null);
@@ -526,43 +569,84 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
       time: currentTime
     };
     
-    setChatMessages(prev => [...prev, newUserMessage]);
+    updateChatMessages(prev => [...prev, newUserMessage]);
     setChatInput('');
     setIsAiTyping(true);
     
     try {
       const diseaseContext = displayRecord?.title || '';
       
-      const response = await chatWithAIDoctor({
+      await streamChatWithAIDoctor({
         userId: 'user_001',
         message: userMessage,
         diseaseContext: diseaseContext,
         chatHistory: chatMessages,
         userRecords: diseaseHistory
+      }, {
+        onChunk: (chunk) => {
+          // 实时更新AI消息
+          updateChatMessages(prev => {
+            const updated = [...prev];
+            const lastMsg = updated[updated.length - 1];
+            if (lastMsg && lastMsg.role === 'ai') {
+              updated[updated.length - 1] = {
+                ...lastMsg,
+                content: lastMsg.content + chunk
+              };
+            } else {
+              updated.push({
+                role: 'ai',
+                content: chunk,
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+              });
+            }
+            return updated;
+          });
+        },
+        onError: (error) => {
+          // 更新最后一条AI消息为错误信息
+          updateChatMessages(prev => {
+            const updated = [...prev];
+            const lastMsg = updated[updated.length - 1];
+            if (lastMsg && lastMsg.role === 'ai') {
+              updated[updated.length - 1] = {
+                ...lastMsg,
+                content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
+              };
+            } else {
+              updated.push({
+                role: 'ai',
+                content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。',
+                time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+              });
+            }
+            return updated;
+          });
+        },
+        onDone: () => {
+          // 流式传输完成
+        }
       });
 
-      if (response.success) {
-        const aiReply: ChatMessage = {
-          role: 'ai',
-          content: response.response,
-          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-        };
-        setChatMessages(prev => [...prev, aiReply]);
-      } else {
-        const errorReply: ChatMessage = {
-          role: 'ai',
-          content: '抱歉，我暂时无法回答您的问题。请稍后重试或咨询专业医生。',
-          time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-        };
-        setChatMessages(prev => [...prev, errorReply]);
-      }
     } catch (error) {
-      const errorReply: ChatMessage = {
-        role: 'ai',
-        content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。',
-        time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
-      };
-      setChatMessages(prev => [...prev, errorReply]);
+      // 更新最后一条AI消息为错误信息
+      updateChatMessages(prev => {
+        const updated = [...prev];
+        const lastMsg = updated[updated.length - 1];
+        if (lastMsg && lastMsg.role === 'ai') {
+          updated[updated.length - 1] = {
+            ...lastMsg,
+            content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。'
+          };
+        } else {
+          updated.push({
+            role: 'ai',
+            content: '抱歉，网络连接出现问题。请检查网络后重试，或联系客服寻求帮助。',
+            time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
+          });
+        }
+        return updated;
+      });
     } finally {
       setIsAiTyping(false);
     }
@@ -1102,13 +1186,31 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
                     </div>
                   </div>
                 </div>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowAiChat(false)}
-                  className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
-                >
-                  <X size={16} className="text-gray-400" />
-                </motion.button>
+                <div className="flex items-center gap-1">
+                  {chatMessages.length > 1 && (
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => {
+                        if (record) {
+                          const chatStorageKey = `disease_chat_history_${record.id}`;
+                          localStorage.removeItem(chatStorageKey);
+                          setChatMessages(getInitialAIChat());
+                        }
+                      }}
+                      className="px-2 py-1 text-[10px] text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded transition-colors"
+                      title="清空对话"
+                    >
+                      清空
+                    </motion.button>
+                  )}
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowAiChat(false)}
+                    className="w-7 h-7 flex items-center justify-center rounded-full hover:bg-gray-200 transition-colors"
+                  >
+                    <X size={16} className="text-gray-400" />
+                  </motion.button>
+                </div>
               </div>
 
               {/* 聊天消息区域 - 可独立滚动 */}
@@ -1149,23 +1251,6 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
                       </div>
                     </div>
                   ))}
-                  {/* AI正在输入指示器 */}
-                  {isAiTyping && (
-                    <div className="flex gap-2">
-                      <div className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 bg-purple-100">
-                        <Bot size={14} className="text-purple-600" />
-                      </div>
-                      <div className="max-w-[75%]">
-                        <div className="inline-block px-3 py-2 rounded-2xl text-sm bg-gray-100 text-gray-700 rounded-bl-md">
-                          <div className="flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                            <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 

@@ -68,6 +68,7 @@ app.post('/api/analyze-skin-record', (req, res) => proxyJson(req, res, '/api/ana
 app.post('/api/disease-trend-analysis', (req, res) => proxyJson(req, res, '/api/disease-trend-analysis'));
 app.post('/api/ai-doctor-chat', (req, res) => proxyJson(req, res, '/api/ai-doctor-chat'));
 app.post('/api/ai-doctor-chat-stream', (req, res) => proxyStream(req, res, '/api/ai-doctor-chat-stream'));
+app.post('/api/disease-trend-chat-stream', (req, res) => proxyStream(req, res, '/api/disease-trend-chat-stream'));
 app.get('/api/admin/ai/providers', (req, res) => proxyJson(req, res, '/api/admin/ai/providers'));
 app.get('/api/admin/ai/config', (req, res) => proxyJson(req, res, '/api/admin/ai/config'));
 app.put('/api/admin/ai/config', (req, res) => proxyJson(req, res, '/api/admin/ai/config'));

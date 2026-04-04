@@ -1,0 +1,223 @@
+{
+  "version": "1.0.0",
+  "name": "美容保养成分RAG知识库",
+  "description": "基于权威皮肤科学来源的美容保养成分数据库，包含24种常见护肤成分的详细信息",
+  "created_date": "2025-04-02",
+  "last_updated": "2025-04-02",
+  "total_ingredients": 24,
+  "evidence_levels": {
+    "A级": 18,
+    "B级": 6
+  },
+  "categories": {
+    "抗衰老": ["ING001", "ING002", "ING008", "ING015", "ING023", "ING024"],
+    "抗氧化/美白": ["ING002", "ING017"],
+    "多功能": ["ING003"],
+    "保湿": ["ING004", "ING014", "ING019"],
+    "去角质/焕肤": ["ING005", "ING021"],
+    "去角质/祛痘": ["ING006"],
+    "屏障修复": ["ING007"],
+    "祛痘/美白": ["ING009"],
+    "美白": ["ING010", "ING011"],
+    "修复/舒缓": ["ING012", "ING020"],
+    "抗氧化/舒缓": ["ING013"],
+    "内服美容": ["ING018"],
+    "保湿/修复": ["ING019"],
+    "去角质/保湿": ["ING022"],
+    "处方祛痘/抗衰老": ["ING023", "ING024"],
+    "防晒": ["ING016"]
+  },
+  "sources": [
+    "American Academy of Dermatology (AAD)",
+    "Journal of Investigative Dermatology",
+    "Journal of the American Academy of Dermatology",
+    "PubMed",
+    "FDA",
+    "British Journal of Dermatology",
+    "PMC",
+    "Journal of Cosmetic Dermatology"
+  ],
+  "ingredients": [
+    {
+      "id": "ING001",
+      "name": "视黄醇/维A醇",
+      "category": "抗衰老",
+      "evidence_level": "A级",
+      "key_benefits": ["抗衰老", "祛痘", "美白"]
+    },
+    {
+      "id": "ING002",
+      "name": "维生素C",
+      "category": "抗氧化/美白",
+      "evidence_level": "A级",
+      "key_benefits": ["抗氧化", "美白", "抗衰老"]
+    },
+    {
+      "id": "ING003",
+      "name": "烟酰胺",
+      "category": "多功能",
+      "evidence_level": "A级",
+      "key_benefits": ["控油", "美白", "抗衰老", "修复屏障"]
+    },
+    {
+      "id": "ING004",
+      "name": "透明质酸",
+      "category": "保湿",
+      "evidence_level": "A级",
+      "key_benefits": ["保湿", "修复", "抗衰老"]
+    },
+    {
+      "id": "ING005",
+      "name": "果酸(AHA)",
+      "category": "去角质/焕肤",
+      "evidence_level": "A级",
+      "key_benefits": ["去角质", "美白", "抗衰老", "祛痘"]
+    },
+    {
+      "id": "ING006",
+      "name": "水杨酸(BHA)",
+      "category": "去角质/祛痘",
+      "evidence_level": "A级",
+      "key_benefits": ["祛痘", "去角质", "控油"]
+    },
+    {
+      "id": "ING007",
+      "name": "神经酰胺",
+      "category": "屏障修复",
+      "evidence_level": "A级",
+      "key_benefits": ["修复屏障", "保湿", "舒缓"]
+    },
+    {
+      "id": "ING008",
+      "name": "胜肽",
+      "category": "抗衰老",
+      "evidence_level": "B级",
+      "key_benefits": ["抗衰老", "修复", "舒缓"]
+    },
+    {
+      "id": "ING009",
+      "name": "壬二酸",
+      "category": "祛痘/美白",
+      "evidence_level": "A级",
+      "key_benefits": ["祛痘", "美白", "抗炎"]
+    },
+    {
+      "id": "ING010",
+      "name": "传明酸",
+      "category": "美白",
+      "evidence_level": "A级",
+      "key_benefits": ["美白", "淡斑", "抗炎"]
+    },
+    {
+      "id": "ING011",
+      "name": "曲酸",
+      "category": "美白",
+      "evidence_level": "A级",
+      "key_benefits": ["美白", "淡斑"]
+    },
+    {
+      "id": "ING012",
+      "name": "积雪草提取物",
+      "category": "修复/舒缓",
+      "evidence_level": "B级",
+      "key_benefits": ["修复", "舒缓", "抗衰老", "抗氧化"]
+    },
+    {
+      "id": "ING013",
+      "name": "绿茶提取物(EGCG)",
+      "category": "抗氧化/舒缓",
+      "evidence_level": "B级",
+      "key_benefits": ["抗氧化", "舒缓", "抗衰老", "美白"]
+    },
+    {
+      "id": "ING014",
+      "name": "角鲨烷",
+      "category": "保湿",
+      "evidence_level": "A级",
+      "key_benefits": ["保湿", "修复", "舒缓"]
+    },
+    {
+      "id": "ING015",
+      "name": "补骨脂酚",
+      "category": "抗衰老",
+      "evidence_level": "A级",
+      "key_benefits": ["抗衰老", "美白", "祛痘"]
+    },
+    {
+      "id": "ING016",
+      "name": "氧化锌",
+      "category": "防晒",
+      "evidence_level": "A级",
+      "key_benefits": ["防晒", "舒缓", "修复"]
+    },
+    {
+      "id": "ING017",
+      "name": "熊果苷",
+      "category": "美白",
+      "evidence_level": "B级",
+      "key_benefits": ["美白", "淡斑"]
+    },
+    {
+      "id": "ING018",
+      "name": "口服胶原蛋白肽",
+      "category": "内服美容",
+      "evidence_level": "A级",
+      "key_benefits": ["抗衰老", "保湿", "修复"]
+    },
+    {
+      "id": "ING019",
+      "name": "泛醇/维生素B5",
+      "category": "保湿/修复",
+      "evidence_level": "A级",
+      "key_benefits": ["保湿", "修复", "舒缓"]
+    },
+    {
+      "id": "ING020",
+      "name": "尿囊素",
+      "category": "修复/舒缓",
+      "evidence_level": "A级",
+      "key_benefits": ["舒缓", "修复", "保湿"]
+    },
+    {
+      "id": "ING021",
+      "name": "杏仁酸",
+      "category": "去角质/焕肤",
+      "evidence_level": "B级",
+      "key_benefits": ["去角质", "美白", "祛痘", "抗衰老"]
+    },
+    {
+      "id": "ING022",
+      "name": "多羟基酸(PHA)",
+      "category": "去角质/保湿",
+      "evidence_level": "B级",
+      "key_benefits": ["去角质", "保湿", "抗氧化"]
+    },
+    {
+      "id": "ING023",
+      "name": "阿达帕林",
+      "category": "处方祛痘/抗衰老",
+      "evidence_level": "A级",
+      "key_benefits": ["祛痘", "抗衰老", "改善纹理"]
+    },
+    {
+      "id": "ING024",
+      "name": "维A酸",
+      "category": "处方祛痘/抗衰老",
+      "evidence_level": "A级",
+      "key_benefits": ["祛痘", "抗衰老", "美白"]
+    }
+  ],
+  "search_keywords": {
+    "抗衰老": ["ING001", "ING002", "ING008", "ING015", "ING018", "ING023", "ING024"],
+    "美白": ["ING002", "ING003", "ING009", "ING010", "ING011", "ING013", "ING015", "ING017", "ING021", "ING024"],
+    "祛痘": ["ING001", "ING003", "ING005", "ING006", "ING009", "ING015", "ING021", "ING023", "ING024"],
+    "保湿": ["ING004", "ING007", "ING014", "ING018", "ING019", "ING020", "ING022"],
+    "修复": ["ING007", "ING012", "ING014", "ING018", "ING019", "ING020"],
+    "舒缓": ["ING007", "ING012", "ING013", "ING014", "ING016", "ING019", "ING020"],
+    "抗氧化": ["ING002", "ING012", "ING013", "ING014", "ING015", "ING022"],
+    "去角质": ["ING005", "ING006", "ING021", "ING022"],
+    "防晒": ["ING016"],
+    "敏感肌": ["ING003", "ING007", "ING012", "ING013", "ING014", "ING019", "ING020", "ING021", "ING022"],
+    "处方药物": ["ING023", "ING024"]
+  }
+}
