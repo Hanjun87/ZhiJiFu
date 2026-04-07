@@ -1,9 +1,10 @@
 import json
+import re
 import os
 from pathlib import Path
 
 # 加载 backend 目录的 .env 文件
-backend_dir = Path("e:\\workspace\\SkinAI\\skinAI\\backend")
+backend_dir = Path(__file__).resolve().parent.parent.parent.parent / "backend"
 env_file = backend_dir / ".env"
 if env_file.exists():
     try:
@@ -1065,3 +1066,128 @@ def _call_llm_stream(system_prompt: str, user_message: str, chat_history: list):
             yield f"抱歉，服务暂时不可用（{response.status_code}），请稍后重试。"
     except Exception as e:
         yield f"抱歉，网络连接出现问题：{str(e)}"
+
+
+# ==================== 认证API ====================
+
+from .models import UserAccount
+
+PHONE_REGEX = re.compile(r'^1[3-9]\d{9}$')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def register_user(request):
+    """用户注册"""
+    try:
+        payload = parse_json_body(request)
+        phone = payload.get('phone', '').strip()
+        password = payload.get('password', '').strip()
+
+        if not phone or not PHONE_REGEX.match(phone):
+            return JsonResponse({"success": False, "message": "请输入正确的11位手机号码"}, status=400)
+        if not password or len(password) < 6:
+            return JsonResponse({"success": False, "message": "密码不能少于6位"}, status=400)
+        if UserAccount.objects.filter(phone=phone).exists():
+            return JsonResponse({"success": False, "message": "该手机号已注册"}, status=400)
+
+        user = UserAccount.objects.create(phone=phone, role='user')
+        user.set_password(password)
+        user.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "注册成功",
+            "data": {
+                "accountId": str(user.account_id),
+                "phone": user.phone,
+                "role": user.role,
+            }
+        })
+    except Exception as exc:
+        return JsonResponse({"success": False, "message": str(exc)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def register_doctor(request):
+    """医生注册"""
+    try:
+        payload = parse_json_body(request)
+        real_name = payload.get('realName', '').strip()
+        phone = payload.get('phone', '').strip()
+        hospital = payload.get('hospital', '').strip()
+        password = payload.get('password', '').strip()
+
+        if not real_name:
+            return JsonResponse({"success": False, "message": "请输入真实姓名"}, status=400)
+        if not phone or not PHONE_REGEX.match(phone):
+            return JsonResponse({"success": False, "message": "请输入正确的11位手机号码"}, status=400)
+        if not hospital:
+            return JsonResponse({"success": False, "message": "请输入执业医院"}, status=400)
+        if not password or len(password) < 6:
+            return JsonResponse({"success": False, "message": "密码不能少于6位"}, status=400)
+        if UserAccount.objects.filter(phone=phone).exists():
+            return JsonResponse({"success": False, "message": "该手机号已注册"}, status=400)
+
+        doctor = UserAccount.objects.create(
+            phone=phone, role='doctor', real_name=real_name, hospital=hospital,
+            verification_status='pending'
+        )
+        doctor.set_password(password)
+        doctor.save()
+
+        return JsonResponse({
+            "success": True,
+            "message": "注册成功，请等待审核",
+            "data": {
+                "accountId": str(doctor.account_id),
+                "phone": doctor.phone,
+                "role": doctor.role,
+                "realName": doctor.real_name,
+                "hospital": doctor.hospital,
+                "verificationStatus": doctor.verification_status,
+            }
+        })
+    except Exception as exc:
+        return JsonResponse({"success": False, "message": str(exc)}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def login_view(request):
+    """用户/医生登录"""
+    try:
+        payload = parse_json_body(request)
+        phone = payload.get('phone', '').strip()
+        password = payload.get('password', '').strip()
+        role = payload.get('role', 'user')
+
+        if not phone or not password:
+            return JsonResponse({"success": False, "message": "请输入手机号和密码"}, status=400)
+
+        try:
+            user = UserAccount.objects.get(phone=phone, role=role, is_active=True)
+        except UserAccount.DoesNotExist:
+            return JsonResponse({"success": False, "message": "账号不存在或密码错误"}, status=401)
+
+        if not user.check_password(password):
+            return JsonResponse({"success": False, "message": "账号不存在或密码错误"}, status=401)
+
+        data = {
+            "accountId": str(user.account_id),
+            "phone": user.phone,
+            "role": user.role,
+        }
+        if user.role == 'doctor':
+            data["realName"] = user.real_name
+            data["hospital"] = user.hospital
+            data["verificationStatus"] = user.verification_status
+
+        return JsonResponse({
+            "success": True,
+            "message": "登录成功",
+            "data": data
+        })
+    except Exception as exc:
+        return JsonResponse({"success": False, "message": str(exc)}, status=500)

@@ -28,6 +28,9 @@ import { CreatePost } from './pages/Community/CreatePost';
 import { Contacts } from './pages/Community/Contacts';
 import { Chat } from './pages/Community/Chat';
 import DiseaseTrendTest from './pages/Profile/DiseaseTrendTest';
+import LoginPage from './pages/Auth/Login';
+import UserRegisterPage from './pages/Auth/UserRegister';
+import DoctorRegisterPage from './pages/Auth/DoctorRegister';
 import { Page, Record as SkinRecord, AnalysisResult } from './types';
 import { BottomNav } from './components/common/BottomNav';
 import { MessageSquare, Calendar, Settings } from 'lucide-react';
@@ -40,6 +43,16 @@ import BackButton from './components/common/BackButton';
 export default function App() {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
   const buildApiUrl = (path: string) => `${apiBaseUrl}${path}`;
+
+  // 根据 URL path 确定初始页面
+  const getInitialPage = (): Page => {
+    const pathname = window.location.pathname;
+    if (pathname === '/login') return 'login';
+    if (pathname === '/user') return 'register_user';
+    if (pathname === '/doctor') return 'register_doctor';
+    return 'home';
+  };
+
   const primaryTabs: Page[] = ['home', 'records', 'community', 'profile'];
   const isTabPage = (page: Page) => primaryTabs.includes(page);
   const pageRootMap: Record<Page, Page> = {
@@ -67,11 +80,17 @@ export default function App() {
     skin_record_result: 'home',
     diary_detail: 'records',
     disease_trend_test: 'profile',
+    login: 'home',
+    register_user: 'home',
+    register_doctor: 'home',
   };
-  const [currentPage, _setCurrentPage] = useState<Page>('home');
-  const [previousPage, setPreviousPage] = useState<Page>('home');
+  const [currentPage, _setCurrentPage] = useState<Page>(getInitialPage);
+  const [previousPage, setPreviousPage] = useState<Page>(getInitialPage);
   const reducedMotion = useReducedMotion();
-  const [transitionState, setTransitionState] = useState(() => resolveTransition('home', 'home'));
+  const [transitionState, setTransitionState] = useState(() => {
+    const init = getInitialPage();
+    return resolveTransition(init, init);
+  });
 
   const getRootTab = (page: Page) => {
     // 对于帖子详情页面，根据来源决定根标签页
@@ -79,6 +98,12 @@ export default function App() {
       return previousPage === 'profile' ? 'profile' : 'community';
     }
     return pageRootMap[page] ?? 'home';
+  };
+
+  const pageToPath: Partial<Record<Page, string>> = {
+    login: '/login',
+    register_user: '/user',
+    register_doctor: '/doctor',
   };
 
   const setCurrentPage = (page: Page) => {
@@ -90,6 +115,13 @@ export default function App() {
     setTransitionState(resolveTransition(currentPage, page));
     setPreviousPage(currentPage);
     _setCurrentPage(page);
+    // 同步更新 URL
+    const targetPath = pageToPath[page];
+    if (targetPath) {
+      window.history.pushState(null, '', targetPath);
+    } else if (currentPage in pageToPath) {
+      window.history.pushState(null, '', '/');
+    }
   };
 
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
@@ -287,7 +319,7 @@ export default function App() {
   // --- Render Helpers ---
 
   const pageTransition = getPageTransition(transitionState.kind, transitionState.direction, Boolean(reducedMotion));
-  const immersivePage = ['camera', 'analysis', 'result', 'skin_record_analysis', 'skin_record_result'].includes(currentPage);
+  const immersivePage = ['camera', 'analysis', 'result', 'skin_record_analysis', 'skin_record_result', 'login', 'register_user', 'register_doctor'].includes(currentPage);
   const activeRootTab = getRootTab(currentPage);
   const activeRootTabIndex = primaryTabs.indexOf(activeRootTab);
   const overlayPageVisible = !isTabPage(currentPage);
@@ -443,6 +475,15 @@ export default function App() {
     if (currentPage === 'disease_trend_test') {
       return <DiseaseTrendTest apiBaseUrl={apiBaseUrl} onBack={() => setCurrentPage('profile')} />;
     }
+    if (currentPage === 'login') {
+      return <LoginPage apiBaseUrl={apiBaseUrl} onNavigate={setCurrentPage} />;
+    }
+    if (currentPage === 'register_user') {
+      return <UserRegisterPage apiBaseUrl={apiBaseUrl} onNavigate={setCurrentPage} />;
+    }
+    if (currentPage === 'register_doctor') {
+      return <DoctorRegisterPage apiBaseUrl={apiBaseUrl} onNavigate={setCurrentPage} />;
+    }
     return <CreatePost onNavigate={setCurrentPage} />;
   };
 
@@ -480,7 +521,7 @@ export default function App() {
         ))}
         {/* Overlay 背景遮罩 - 防止页面切换时看到底层内容 */}
         {overlayPageVisible && (
-          <div className="absolute inset-0 z-10 bg-gray-50" />
+          <div className={`absolute inset-0 z-10 ${['login', 'register_user', 'register_doctor'].includes(currentPage) ? 'bg-[#f0f5ff]' : 'bg-gray-50'}`} />
         )}
         <AnimatePresence mode="popLayout" initial={false}>
           {overlayPageVisible && (

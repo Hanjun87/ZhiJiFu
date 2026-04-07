@@ -1,4 +1,4 @@
-export type Page = 'home' | 'camera' | 'analysis' | 'result' | 'records' | 'record_detail' | 'profile' | 'consultations' | 'appointments' | 'settings' | 'about' | 'community' | 'community_post_detail' | 'community_expert' | 'community_create' | 'community_contacts' | 'community_chat' | 'history' | 'hospital' | 'profile_edit' | 'skin_record_analysis' | 'skin_record_result' | 'diary_detail' | 'disease_trend_test';
+export type Page = 'home' | 'camera' | 'analysis' | 'result' | 'records' | 'record_detail' | 'profile' | 'consultations' | 'appointments' | 'settings' | 'about' | 'community' | 'community_post_detail' | 'community_expert' | 'community_create' | 'community_contacts' | 'community_chat' | 'history' | 'hospital' | 'profile_edit' | 'skin_record_analysis' | 'skin_record_result' | 'diary_detail' | 'disease_trend_test' | 'login' | 'register_user' | 'register_doctor';
 
 export interface Record {
   id: string;

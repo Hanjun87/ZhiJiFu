@@ -7,11 +7,19 @@ import signal
 import time
 
 processes = []
-PYTHON_EXECUTABLE = sys.executable
-DJANGO_BOOTSTRAP = os.path.join('services', 'django', 'bootstrap.py')
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
+DJANGO_BOOTSTRAP = os.path.join('services', 'django', 'bootstrap.py')
 NPM_EXECUTABLE = 'npm.cmd' if os.name == 'nt' else 'npm'
 NPX_EXECUTABLE = 'npx.cmd' if os.name == 'nt' else 'npx'
+
+def get_venv_python():
+    venv_dir = os.path.join(PROJECT_ROOT, '.venv')
+    if os.name == 'nt':
+        return os.path.join(venv_dir, 'Scripts', 'python.exe')
+    return os.path.join(venv_dir, 'bin', 'python')
+
+_venv_python = get_venv_python()
+PYTHON_EXECUTABLE = _venv_python if os.path.exists(_venv_python) else sys.executable
 
 def load_env_file(path):
     if not os.path.exists(path):
