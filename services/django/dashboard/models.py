@@ -1,6 +1,46 @@
 import uuid
+import hashlib
 
 from django.db import models
+
+
+class UserAccount(models.Model):
+    """用户账号（用户/医生）"""
+    ROLE_CHOICES = [
+        ('user', '普通用户'),
+        ('doctor', '医生'),
+    ]
+    account_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    phone = models.CharField(max_length=11, unique=True, verbose_name='手机号')
+    password_hash = models.CharField(max_length=128, verbose_name='密码哈希')
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user', verbose_name='角色')
+    # 医生专属字段
+    real_name = models.CharField(max_length=64, blank=True, verbose_name='真实姓名')
+    hospital = models.CharField(max_length=128, blank=True, verbose_name='执业医院')
+    # 医生审核状态
+    verification_status = models.CharField(
+        max_length=20,
+        choices=[('pending', '待审核'), ('approved', '已通过'), ('rejected', '已拒绝')],
+        default='pending',
+        verbose_name='审核状态'
+    )
+    is_active = models.BooleanField(default=True, verbose_name='是否活跃')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='注册时间')
+    updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')
+
+    class Meta:
+        verbose_name = "用户账号"
+        verbose_name_plural = "用户账号"
+        db_table = 'user_account'
+
+    def set_password(self, raw_password: str):
+        self.password_hash = hashlib.sha256(raw_password.encode()).hexdigest()
+
+    def check_password(self, raw_password: str) -> bool:
+        return self.password_hash == hashlib.sha256(raw_password.encode()).hexdigest()
+
+    def __str__(self):
+        return f"{self.get_role_display()} - {self.phone}"
 
 
 class AIProviderConfig(models.Model):

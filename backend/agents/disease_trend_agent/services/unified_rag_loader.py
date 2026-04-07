@@ -22,8 +22,9 @@ class UnifiedRAGLoader:
         self.disease_map: Dict[str, Dict[str, Any]] = {}
         self.category_map: Dict[str, List[Dict[str, Any]]] = {}
         
-        # RAG数据文件路径
-        self.rag_base_path = Path("e:/workspace/SkinAI/skinAI/Unified_Medical_RAG_Project")
+        # RAG数据文件路径 - 使用项目内路径
+        _project_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+        self.rag_base_path = _project_root / "Unified_Medical_RAG_Project"
         self.dermatology_file = self.rag_base_path / "dermatology_rag_data.json"
         self.wound_file = self.rag_base_path / "complete_wound_database.json"
         
@@ -44,16 +45,16 @@ class UnifiedRAGLoader:
             self._load_wound_data()
             self._build_indices()
             self._loaded = True
-            print(f"✓ Unified RAG数据加载完成: {len(self.dermatology_data)}种皮肤病 + {len(self.wound_data)}种伤口")
+            print(f"[OK] Unified RAG data loaded: {len(self.dermatology_data)} diseases + {len(self.wound_data)} wounds")
             return True
         except Exception as e:
-            print(f"✗ Unified RAG数据加载失败: {e}")
+            print(f"[FAIL] Unified RAG data load failed: {e}")
             return False
     
     def _load_dermatology_data(self):
         """加载皮肤病数据"""
         if not self.dermatology_file.exists():
-            print(f"⚠ 皮肤病数据文件不存在: {self.dermatology_file}")
+            print(f"[WARN] Dermatology data file not found: {self.dermatology_file}")
             return
             
         with open(self.dermatology_file, 'r', encoding='utf-8') as f:
@@ -74,7 +75,7 @@ class UnifiedRAGLoader:
     def _load_wound_data(self):
         """加载伤口护理数据"""
         if not self.wound_file.exists():
-            print(f"⚠ 伤口护理数据文件不存在: {self.wound_file}")
+            print(f"[WARN] Wound data file not found: {self.wound_file}")
             return
             
         with open(self.wound_file, 'r', encoding='utf-8') as f:

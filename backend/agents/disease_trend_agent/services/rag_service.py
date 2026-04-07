@@ -35,7 +35,7 @@ class RAGService:
             self.rag_loader = get_rag_loader()
             self.rag_available = self.rag_loader.load_all()
         except Exception as e:
-            print(f"⚠ RAG加载器初始化失败: {e}")
+            print(f"[WARN] RAG loader init failed: {e}")
             self.rag_available = False
         
         self._initialized = True

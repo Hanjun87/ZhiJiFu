@@ -63,6 +63,9 @@ app.use(cors());
 app.use(express.json({ limit: '12mb' }));
 
 app.get('/api/health', (req, res) => proxyJson(req, res, '/api/health'));
+app.post('/api/auth/register', (req, res) => proxyJson(req, res, '/api/auth/register'));
+app.post('/api/auth/register-doctor', (req, res) => proxyJson(req, res, '/api/auth/register-doctor'));
+app.post('/api/auth/login', (req, res) => proxyJson(req, res, '/api/auth/login'));
 app.post('/api/analyze-skin', (req, res) => proxyJson(req, res, '/api/analyze-skin'));
 app.post('/api/analyze-skin-record', (req, res) => proxyJson(req, res, '/api/analyze-skin-record'));
 app.post('/api/disease-trend-analysis', (req, res) => proxyJson(req, res, '/api/disease-trend-analysis'));
