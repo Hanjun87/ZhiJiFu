@@ -6,15 +6,7 @@ from ..core.state import DiseaseTrackingState
 
 
 def alert_doctor_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
-    """
-    发送医生通知
-    
-    Args:
-        state: 当前状态
-        
-    Returns:
-        更新后的状态
-    """
+    # 检测到严重情况时通知医生
     user_id = state["user_id"]
     case_id = state["case_id"]
     indicators = state.get("trend_indicators") or {}

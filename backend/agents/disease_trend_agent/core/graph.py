@@ -1,5 +1,5 @@
 """
-LangGraph工作流定义
+工作流定义
 """
 
 from langgraph.graph import StateGraph, END
@@ -15,14 +15,7 @@ from ..agents.trend_judge_agent import TrendJudgeAgent
 
 
 def build_workflow() -> StateGraph:
-    """
-    构建疾病趋势诊断工作流
-    
-    Returns:
-        StateGraph: 编译后的工作流
-    """
-    
-    # 创建工作流
+    # 构建疾病趋势诊断工作流
     workflow = StateGraph(DiseaseTrackingState)
     
     # 添加节点
@@ -40,23 +33,20 @@ def build_workflow() -> StateGraph:
     workflow.add_edge("fetch_data", "extract_indicators")
     workflow.add_edge("extract_indicators", "trend_judge_agent")
     
-    # 条件边：根据Agent决策路由
+    # 条件边
     workflow.add_conditional_edges(
         "trend_judge_agent",
         route_by_agent_decision,
         {
-            "FINALIZE": "rag_retrieval", # 确保始终获取RAG知识
+            "FINALIZE": "rag_retrieval",
             "RAG_LOOKUP": "rag_retrieval",
-            "REQUEST_DATA": "rag_retrieval",  # 即使数据不足，也提供疾病的基础RAG护理建议
+            "REQUEST_DATA": "rag_retrieval",
             "ALERT_DOCTOR": "alert_doctor"
         }
     )
     
-    # RAG后汇聚到finalize
     workflow.add_edge("rag_retrieval", "finalize_report")
     workflow.add_edge("alert_doctor", "rag_retrieval")
-    
-    # 结束节点
     workflow.add_edge("finalize_report", END)
     
     return workflow.compile()

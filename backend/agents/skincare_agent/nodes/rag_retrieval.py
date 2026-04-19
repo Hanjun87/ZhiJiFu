@@ -10,15 +10,7 @@ from ..services.skincare_rag_service import skincare_rag_service
 
 
 def rag_retrieval_node(state: SkincareState) -> Dict[str, Any]:
-    """
-    RAG检索节点 - 查询成分知识
-
-    Args:
-        state: 当前状态
-
-    Returns:
-        包含rag_results的字典
-    """
+    # RAG检索节点 - 查询成分知识
     skin_profile = state.get("skin_profile", {})
     skin_concerns = skin_profile.get("skin_concerns", [])
     skin_goals = skin_profile.get("skin_goals", [])
@@ -40,9 +32,6 @@ def rag_retrieval_node(state: SkincareState) -> Dict[str, Any]:
 
 
 def _build_rag_queries(skin_concerns: List[str], skin_goals: List[str], skin_type: str) -> List[str]:
-    """
-    构建RAG查询列表
-    """
     queries = []
 
     for concern in skin_concerns:

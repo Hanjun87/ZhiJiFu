@@ -1,0 +1,11 @@
+{
+  "Drug_Eruption": 0,
+  "Other": 1,
+  "Viral_Exanthem": 2,
+  "drug": 3,
+  "enterovirus": 4,
+  "erythema": 5,
+  "gianotti": 6,
+  "kawasaki": 7,
+  "scarlet": 8
+}

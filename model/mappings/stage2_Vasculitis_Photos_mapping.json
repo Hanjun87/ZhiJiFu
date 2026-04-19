@@ -1,0 +1,9 @@
+{
+  "Other": 0,
+  "Pyoderma": 1,
+  "Vasculitis": 2,
+  "erythema": 3,
+  "henoch": 4,
+  "interstitial": 5,
+  "schamberg": 6
+}

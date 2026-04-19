@@ -199,20 +199,6 @@ class CareAdvisor:
         rag_context: Optional[Dict[str, Any]] = None,
         disease_name: Optional[str] = None
     ) -> List[CareAdvice]:
-        """
-        生成护理建议
-
-        Args:
-            verdict: 诊断结论 (better/worse/stable/insufficient)
-            recovery_progress: 恢复进度信息
-            user_profile: 用户画像
-            trend_indicators: 趋势指标
-            rag_context: RAG检索结果（包含医学知识）
-            disease_name: 疾病名称
-
-        Returns:
-            护理建议列表
-        """
         advice_list = []
         skin_type = self._parse_skin_type(user_profile)
         recovery_percent = recovery_progress.get("recovery_percent", 0)
@@ -245,7 +231,6 @@ class CareAdvisor:
         return advice_list
 
     def _parse_skin_type(self, user_profile: Optional[Dict[str, Any]]) -> SkinType:
-        """解析肤质类型"""
         if not user_profile:
             return SkinType.MIXED
 
@@ -260,7 +245,6 @@ class CareAdvisor:
         recovery_percent: float,
         progress_changed: str
     ) -> List[CareAdvice]:
-        """生成基础护理建议"""
         advice_list = []
 
         # 根据恢复进度调整优先级
@@ -322,7 +306,6 @@ class CareAdvisor:
         return advice_list
 
     def _generate_trend_advice(self, verdict: str, recovery_percent: float) -> Optional[CareAdvice]:
-        """生成趋势特定建议"""
         trend_data = self.TREND_SPECIFIC_ADVICE.get(verdict)
         if not trend_data:
             return None
@@ -344,7 +327,6 @@ class CareAdvisor:
         )
 
     def _generate_skin_type_advice(self, skin_type: SkinType) -> Optional[CareAdvice]:
-        """生成肤质特定建议"""
         skin_data = self.SKIN_TYPE_ADVICE.get(skin_type)
         if not skin_data:
             return None
@@ -361,7 +343,6 @@ class CareAdvisor:
         self,
         recovery_progress: Dict[str, Any]
     ) -> Optional[CareAdvice]:
-        """根据恢复进度生成特定建议"""
         recovery_percent = recovery_progress.get("recovery_percent", 0)
         details = recovery_progress.get("details", {})
 
@@ -412,10 +393,10 @@ class CareAdvisor:
         severity_recovery = details.get("severity_recovery", {})
 
         if lesion_recovery.get("velocity", 0) > 0:
-            tips.append("⚠️ 病灶数有增加趋势，建议及时就医检查")
+            tips.append("病灶数有增加趋势，建议及时就医检查")
 
         if area_recovery.get("velocity", 0) > 0:
-            tips.append("⚠️ 受影响面积在扩大，需要调整护理方案")
+            tips.append("受影响面积在扩大，需要调整护理方案")
 
         return CareAdvice(
             category="progress_specific",
@@ -431,17 +412,6 @@ class CareAdvisor:
         verdict: str,
         disease_name: Optional[str] = None
     ) -> List[CareAdvice]:
-        """
-        基于RAG医学知识生成护理建议
-        
-        Args:
-            rag_context: RAG检索结果
-            verdict: 诊断结论
-            disease_name: 疾病名称
-            
-        Returns:
-            护理建议列表
-        """
         advice_list = []
         
         # 从RAG结果中提取医学知识
@@ -517,7 +487,6 @@ class CareAdvisor:
         return advice_list
 
     def to_dict_list(self, advice_list: List[CareAdvice]) -> List[Dict[str, Any]]:
-        """转换为字典列表"""
         return [
             {
                 "category": advice.category,
@@ -544,20 +513,6 @@ def generate_care_advice(
     rag_context: Optional[Dict[str, Any]] = None,
     disease_name: Optional[str] = None
 ) -> List[Dict[str, Any]]:
-    """
-    生成护理建议的便捷函数
-
-    Args:
-        verdict: 诊断结论
-        recovery_progress: 恢复进度信息
-        user_profile: 用户画像
-        trend_indicators: 趋势指标
-        rag_context: RAG检索结果
-        disease_name: 疾病名称
-
-    Returns:
-        护理建议字典列表
-    """
     advice_list = care_advisor.generate_advice(
         verdict=verdict,
         recovery_progress=recovery_progress,

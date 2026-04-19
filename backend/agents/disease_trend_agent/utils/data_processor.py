@@ -9,15 +9,6 @@ class DataProcessor:
     """数据处理工具类"""
     
     def extract_severity_timeline(self, records: List[Dict[str, Any]]) -> List[int]:
-        """
-        提取严重度时间线
-        
-        Args:
-            records: 原始记录列表
-            
-        Returns:
-            严重度时间线（1-3）
-        """
         timeline = []
         for record in records:
             result = record.get("analysis_result", {})
@@ -26,15 +17,6 @@ class DataProcessor:
         return timeline
     
     def calculate_lesion_count_trend(self, records: List[Dict[str, Any]]) -> str:
-        """
-        计算病灶数变化趋势
-        
-        Args:
-            records: 原始记录列表
-            
-        Returns:
-            变化百分比字符串，如"+15%"或"-20%"
-        """
         if len(records) < 2:
             return "0%"
         
@@ -49,15 +31,6 @@ class DataProcessor:
         return f"{sign}{change:.0f}%"
     
     def calculate_area_change(self, records: List[Dict[str, Any]]) -> str:
-        """
-        计算面积变化
-        
-        Args:
-            records: 原始记录列表
-            
-        Returns:
-            变化百分比字符串
-        """
         if len(records) < 2:
             return "0%"
         
@@ -72,15 +45,6 @@ class DataProcessor:
         return f"{sign}{change:.0f}%"
     
     def analyze_confidence_trend(self, records: List[Dict[str, Any]]) -> str:
-        """
-        分析API置信度趋势
-        
-        Args:
-            records: 原始记录列表
-            
-        Returns:
-            趋势描述：increasing, declining, stable
-        """
         if len(records) < 2:
             return "stable"
         
@@ -99,15 +63,6 @@ class DataProcessor:
             return "stable"
     
     def check_disease_consistency(self, records: List[Dict[str, Any]]) -> bool:
-        """
-        检查诊断一致性
-        
-        Args:
-            records: 原始记录列表
-            
-        Returns:
-            是否一致
-        """
         if len(records) < 2:
             return True
         
@@ -120,15 +75,6 @@ class DataProcessor:
         return len(set(diseases)) == 1
     
     def detect_anomalies(self, records: List[Dict[str, Any]]) -> List[str]:
-        """
-        检测异常点
-        
-        Args:
-            records: 原始记录列表
-            
-        Returns:
-            异常点描述列表
-        """
         anomalies = []
         
         if len(records) < 2:

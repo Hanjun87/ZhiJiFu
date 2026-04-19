@@ -14,15 +14,7 @@ from ..config.prompts import LLM_REASONING_PROMPT
 
 
 def llm_reasoning_node(state: SkincareState) -> Dict[str, Any]:
-    """
-    LLM推理节点 - 生成个性化护肤方案
-
-    Args:
-        state: 当前状态
-
-    Returns:
-        包含routine的字典
-    """
+    # 调用LLM生成个性化护肤方案
     try:
         return llm_reasoning_with_llm(state)
     except Exception as e:
@@ -31,9 +23,6 @@ def llm_reasoning_node(state: SkincareState) -> Dict[str, Any]:
 
 
 def llm_reasoning_with_llm(state: SkincareState) -> Dict[str, Any]:
-    """
-    调用LLM生成护肤方案
-    """
     api_key = settings.get_api_key()
     if not api_key:
         raise ValueError("未配置API Key")
@@ -81,9 +70,7 @@ def llm_reasoning_with_llm(state: SkincareState) -> Dict[str, Any]:
 
 
 def llm_reasoning_with_defaults(state: SkincareState) -> Dict[str, Any]:
-    """
-    使用默认方案（当LLM调用失败时）
-    """
+    # LLM调用失败时使用默认方案
     skin_profile = state.get("skin_profile", {})
     skin_concerns = skin_profile.get("skin_concerns", [])
     routine_level = skin_profile.get("routine_level", "新手")
@@ -104,9 +91,6 @@ def llm_reasoning_with_defaults(state: SkincareState) -> Dict[str, Any]:
 
 
 def _build_context(state: SkincareState) -> Dict[str, str]:
-    """
-    构建LLM输入上下文
-    """
     skin_profile = state.get("skin_profile", {})
     skin_metrics = state.get("skin_metrics", [])
     rag_results = state.get("rag_results", [])
@@ -141,9 +125,6 @@ def _build_context(state: SkincareState) -> Dict[str, str]:
 
 
 def _format_skin_metrics(skin_metrics: List[Dict[str, Any]]) -> str:
-    """
-    格式化皮肤指标
-    """
     if not skin_metrics:
         return "暂无皮肤指标数据"
 
@@ -169,9 +150,6 @@ def _format_skin_metrics(skin_metrics: List[Dict[str, Any]]) -> str:
 
 
 def _format_rag_results(rag_results: List[Dict[str, Any]]) -> str:
-    """
-    格式化RAG结果
-    """
     if not rag_results:
         return "暂无成分知识"
 

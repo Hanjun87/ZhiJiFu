@@ -31,12 +31,20 @@ import DiseaseTrendTest from './pages/Profile/DiseaseTrendTest';
 import LoginPage from './pages/Auth/Login';
 import UserRegisterPage from './pages/Auth/UserRegister';
 import DoctorRegisterPage from './pages/Auth/DoctorRegister';
-import { Page, Record as SkinRecord, AnalysisResult } from './types';
+import { Page, Record as SkinRecord, AnalysisResult, SkinRecordAnalysisResult } from './types';
 import { BottomNav } from './components/common/BottomNav';
 import { MessageSquare, Calendar, Settings } from 'lucide-react';
 import { cn } from './lib/utils';
 import { getPageTransition, pagePresenceMode, resolveTransition } from './lib/transitions';
 import BackButton from './components/common/BackButton';
+
+interface AuthState {
+  isLoggedIn: boolean;
+  userId: string | null;
+  role: string | null;
+}
+
+const AUTH_STORAGE_KEY = 'skinai_auth';
 
 // --- Main App ---
 
@@ -44,13 +52,46 @@ export default function App() {
   const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
   const buildApiUrl = (path: string) => `${apiBaseUrl}${path}`;
 
-  // 根据 URL path 确定初始页面
+  const [authState, setAuthState] = useState<AuthState>(() => {
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch {}
+    return { isLoggedIn: false, userId: null, role: null };
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(authState));
+    } catch {}
+  }, [authState]);
+
+  const handleLoginSuccess = (data: { accountId: string; role: string }) => {
+    setAuthState({ isLoggedIn: true, userId: data.accountId, role: data.role });
+  };
+
+  const handleLogout = () => {
+    setAuthState({ isLoggedIn: false, userId: null, role: null });
+    _setCurrentPage('login');
+  };
+
+  // 根据 URL path 确定初始页面（未登录时强制跳转登录页）
   const getInitialPage = (): Page => {
-    const pathname = window.location.pathname;
-    if (pathname === '/login') return 'login';
-    if (pathname === '/user') return 'register_user';
-    if (pathname === '/doctor') return 'register_doctor';
-    return 'home';
+    try {
+      const stored = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.isLoggedIn) {
+          const pathname = window.location.pathname;
+          if (pathname === '/login') return 'home';
+          if (pathname === '/user' || pathname === '/doctor') return 'home';
+          return 'home';
+        }
+      }
+    } catch {}
+    return 'login';
   };
 
   const primaryTabs: Page[] = ['home', 'records', 'community', 'profile'];
@@ -106,10 +147,26 @@ export default function App() {
     register_doctor: '/doctor',
   };
 
+  const authPages: Page[] = ['login', 'register_user', 'register_doctor'];
+
   const setCurrentPage = (page: Page) => {
     if (page === currentPage) {
       return;
     }
+
+    // 未登录时拦截非认证页面，强制跳转登录页
+    if (!authState.isLoggedIn && !authPages.includes(page)) {
+      _setCurrentPage('login');
+      window.history.pushState(null, '', '/login');
+      return;
+    }
+    // 已登录时访问认证页面，跳转到首页
+    if (authState.isLoggedIn && authPages.includes(page)) {
+      _setCurrentPage('home');
+      window.history.pushState(null, '', '/');
+      return;
+    }
+
     const currentRootTab = getRootTab(currentPage);
     const nextRootTab = getRootTab(page);
     setTransitionState(resolveTransition(currentPage, page));
@@ -126,6 +183,7 @@ export default function App() {
 
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [skinRecordResult, setSkinRecordResult] = useState<SkinRecordAnalysisResult | null>(null);
   const [records, setRecords] = useState<SkinRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<SkinRecord | null>(null);
   const [selectedDiaryEntry, setSelectedDiaryEntry] = useState<{id: string; date: string; time: string; title: string; status: string; image: string} | null>(null);
@@ -197,6 +255,45 @@ export default function App() {
       console.error("Analysis failed:", error);
       setCurrentPage('home');
       window.alert(error instanceof Error ? error.message : '识别失败，请稍后重试');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  // 分析皮肤状态记录
+  const analyzeSkinRecord = async (base64Image: string) => {
+    setIsAnalyzing(true);
+    setCurrentPage('skin_record_analysis');
+
+    try {
+      const response = await fetch(buildApiUrl('/api/analyze-skin-record'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          imageBase64: base64Image
+        })
+      });
+
+      if (!response.ok) {
+        let errorMessage = '分析服务不可用';
+        try {
+          const errorData = await response.json();
+          if (typeof errorData?.message === 'string' && errorData.message.trim()) {
+            errorMessage = errorData.message;
+          }
+        } catch {}
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      setSkinRecordResult(data);
+      setCurrentPage('skin_record_result');
+    } catch (error) {
+      console.error("Skin record analysis failed:", error);
+      setCurrentPage('home');
+      window.alert(error instanceof Error ? error.message : '分析失败，请稍后重试');
     } finally {
       setIsAnalyzing(false);
     }
@@ -295,12 +392,8 @@ export default function App() {
         if (cameraMode === 'skin') {
           analyzeSkin(dataUrl);
         } else {
-          // 记录皮肤状态模式
-          setCurrentPage('skin_record_analysis');
-          // 模拟分析过程
-          setTimeout(() => {
-            setCurrentPage('skin_record_result');
-          }, 2500);
+          // 记录皮肤状态模式 - 调用真实API
+          analyzeSkinRecord(dataUrl);
         }
       }
     }
@@ -395,6 +488,7 @@ export default function App() {
       return (
         <SkinRecordResult
           capturedImage={capturedImage}
+          analysisResult={skinRecordResult}
           onSave={() => {
             setIsSavingDiary(true);
             setTimeout(() => {
@@ -424,7 +518,7 @@ export default function App() {
       return <PlaceholderPage title="专家预约" icon={<Calendar size={48} />} onBack={() => setCurrentPage('profile')} />;
     }
     if (currentPage === 'settings') {
-      return <SettingsPage onBack={() => setCurrentPage('profile')} />;
+      return <SettingsPage onBack={() => setCurrentPage('profile')} onLogout={handleLogout} />;
     }
     if (currentPage === 'profile_edit') {
       return <ProfileEditPage onBack={() => setCurrentPage('profile')} />;
@@ -476,7 +570,17 @@ export default function App() {
       return <DiseaseTrendTest apiBaseUrl={apiBaseUrl} onBack={() => setCurrentPage('profile')} />;
     }
     if (currentPage === 'login') {
-      return <LoginPage apiBaseUrl={apiBaseUrl} onNavigate={setCurrentPage} />;
+      return (
+        <LoginPage
+          apiBaseUrl={apiBaseUrl}
+          onNavigate={(page, data) => {
+            if (page === 'home' && data && !authState.isLoggedIn) {
+              handleLoginSuccess(data);
+            }
+            setCurrentPage(page);
+          }}
+        />
+      );
     }
     if (currentPage === 'register_user') {
       return <UserRegisterPage apiBaseUrl={apiBaseUrl} onNavigate={setCurrentPage} />;

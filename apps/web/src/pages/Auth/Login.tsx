@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Phone, Lock, Eye, EyeOff, ShieldCheck, Building2, ClipboardList } from 'lucide-react';
+import { Phone, Lock, Eye, EyeOff, ShieldCheck, ClipboardList } from 'lucide-react';
 
 interface LoginPageProps {
   apiBaseUrl: string;
-  onNavigate: (page: any) => void;
+  onNavigate: (page: any, data?: { accountId: string; role: string }) => void;
 }
 
 export default function LoginPage({ apiBaseUrl, onNavigate }: LoginPageProps) {
@@ -31,9 +31,9 @@ export default function LoginPage({ apiBaseUrl, onNavigate }: LoginPageProps) {
       const data = await res.json();
       if (data.success) {
         if (activeTab === 'user') {
-          onNavigate('home');
+          onNavigate('home', { accountId: data.data.accountId, role: data.data.role });
         } else {
-          onNavigate('home');
+          onNavigate('home', { accountId: data.data.accountId, role: data.data.role });
         }
       } else {
         setError(data.message || '登录失败');
@@ -49,17 +49,13 @@ export default function LoginPage({ apiBaseUrl, onNavigate }: LoginPageProps) {
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #f0f5ff 0%, #f8fafc 40%, #f1f5f9 100%)' }}>
       {/* Header */}
       <div className="px-5 pt-6 pb-2 flex items-center gap-2">
-        <div className="w-9 h-9 rounded-xl bg-[#1677FF] flex items-center justify-center">
-          <Building2 size={20} className="text-white" />
-        </div>
+        <img src="/ZhiJiFu.png" alt="知己肤" className="w-9 h-9 rounded-xl object-contain" />
         <span className="text-[#1677FF] font-bold text-lg">知己肤</span>
       </div>
 
       {/* Icon & Title */}
       <div className="flex flex-col items-center mt-4 mb-5">
-        <div className="w-20 h-20 rounded-full bg-[#1677FF] flex items-center justify-center mb-3 shadow-lg shadow-blue-200">
-          <ClipboardList size={40} className="text-white" />
-        </div>
+        <img src="/ZhiJiFu.png" alt="知己肤" className="w-20 h-20 rounded-full object-contain mb-3 shadow-lg" />
         <h1 className="text-2xl font-bold text-gray-900">欢迎回来</h1>
         <p className="text-gray-400 text-sm mt-1">请登录您的专业皮肤健康管理账户</p>
       </div>
@@ -152,13 +148,24 @@ export default function LoginPage({ apiBaseUrl, onNavigate }: LoginPageProps) {
 
         {/* Divider */}
         <div className="mt-5 border-t border-gray-100 pt-4 flex items-center justify-center gap-1">
-          <span className="text-gray-400 text-sm">还没有账号？</span>
-          <button
-            onClick={() => onNavigate(activeTab === 'user' ? 'register_user' : 'register_doctor')}
-            className="text-[#1677FF] text-sm font-medium hover:underline"
-          >
-            立即注册
-          </button>
+          {activeTab === 'user' ? (
+            <>
+              <span className="text-gray-400 text-sm">还没有账号？</span>
+              <button
+                onClick={() => onNavigate('register_user')}
+                className="text-[#1677FF] text-sm font-medium hover:underline"
+              >
+                立即注册
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => onNavigate('register_doctor')}
+              className="text-[#1677FF] text-sm font-medium hover:underline"
+            >
+              注册医生账号
+            </button>
+          )}
         </div>
       </motion.div>
 

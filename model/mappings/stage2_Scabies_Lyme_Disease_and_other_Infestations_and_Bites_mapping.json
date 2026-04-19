@@ -1,0 +1,14 @@
+{
+  "Flea_Bite": 0,
+  "Lice": 1,
+  "Lyme_Disease": 2,
+  "Other": 3,
+  "Scabies": 4,
+  "Tick_Bite": 5,
+  "biting": 6,
+  "cat": 7,
+  "cutaneous": 8,
+  "duck": 9,
+  "myiasis": 10,
+  "spider": 11
+}

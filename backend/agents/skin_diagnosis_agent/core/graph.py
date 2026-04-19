@@ -9,17 +9,6 @@ from .state import DiagnosisState
 
 
 def build_workflow():
-    """
-    构建皮肤病诊断Agent工作流
-    
-    流程：
-    vision_analysis → rag_retrieval → llm_reasoning → compile_output → END
-                                          ↓
-                                   knowledge_feedback (副作用)
-    
-    Returns:
-        编译后的工作流
-    """
     # 延迟导入节点函数，避免循环导入问题
     from nodes.vision_analysis import vision_analysis_node
     from nodes.rag_retrieval import rag_retrieval_node
@@ -64,12 +53,6 @@ _workflow_instance = None
 
 
 def get_workflow():
-    """
-    获取工作流实例（单例模式）
-    
-    Returns:
-        编译后的工作流实例
-    """
     global _workflow_instance
     if _workflow_instance is None:
         _workflow_instance = build_workflow()

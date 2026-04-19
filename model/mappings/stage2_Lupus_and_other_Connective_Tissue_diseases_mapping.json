@@ -1,0 +1,9 @@
+{
+  "Dermatomyositis": 0,
+  "Lupus_Erythematosus": 1,
+  "Morphea": 2,
+  "Other": 3,
+  "Scleroderma": 4,
+  "chilblains": 5,
+  "crest": 6
+}

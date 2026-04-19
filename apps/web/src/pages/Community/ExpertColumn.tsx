@@ -16,7 +16,7 @@ export const ExpertColumn = ({ onNavigate }: { onNavigate: (p: Page) => void }) 
             <h1 className="text-xl font-bold text-gray-900">皮肤健康社区</h1>
           </div>
           <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=doc" alt="User" />
+            <img src="/images/保养/图片1.png" alt="User" />
           </div>
         </div>
         <nav className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-1">

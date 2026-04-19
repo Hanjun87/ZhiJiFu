@@ -80,7 +80,7 @@ const GROUP_CHATS = [
     lastMessage: '有人用过这个产品吗？',
     time: '刚刚',
     unread: 5,
-    avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=group1',
+    avatar: '/images/保养/图片3.png',
   },
   {
     id: '2',
@@ -89,7 +89,7 @@ const GROUP_CHATS = [
     lastMessage: '分享一个修复经验',
     time: '10分钟前',
     unread: 0,
-    avatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=group2',
+    avatar: '/images/保养/图片4.png',
   },
 ];
 

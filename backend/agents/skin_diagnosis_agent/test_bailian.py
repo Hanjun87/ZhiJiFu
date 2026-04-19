@@ -46,14 +46,14 @@ def test_bailian_connection():
             max_tokens=500
         )
         
-        print("\n✅ 调用成功！")
+        print("\n调用成功！")
         print(f"模型: {response.model}")
         print(f"回复内容:\n{response.choices[0].message.content}")
         
         return True
         
     except Exception as e:
-        print(f"\n❌ 调用失败: {e}")
+        print(f"\n调用失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -133,7 +133,7 @@ def test_diagnosis_with_bailian():
         return True
         
     except Exception as e:
-        print(f"\n❌ 测试失败: {e}")
+        print(f"\n测试失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -146,9 +146,10 @@ if __name__ == "__main__":
     
     # 测试1：基础连接
     if test_bailian_connection():
-        print("\n✅ 基础连接测试通过")
+        print("\n基础连接测试通过")
+        connection_ok = True
     else:
-        print("\n⚠️ 基础连接测试失败，跳过诊断测试")
+        print("\n基础连接测试失败，跳过诊断测试")
         sys.exit(1)
     
     # 测试2：诊断推理
@@ -156,9 +157,9 @@ if __name__ == "__main__":
     user_input = input("\n是否继续测试诊断推理？这将消耗API额度 (y/n): ")
     if user_input.lower() == 'y':
         if test_diagnosis_with_bailian():
-            print("\n✅ 诊断推理测试通过")
+            print("\n诊断推理测试通过")
         else:
-            print("\n⚠️ 诊断推理测试失败")
+            print("\n诊断推理测试失败")
     else:
         print("\n已跳过诊断推理测试")
     

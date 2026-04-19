@@ -13,7 +13,7 @@ const HISTORY_DATA = [
     temp: "24°C 晴",
     status: "轻微红肿，伴有瘙痒。T区出油较多，两颊干燥。",
     tags: ["水杨酸精华", "B5修复霜", "停用美白精华"],
-    image: "https://picsum.photos/seed/skin4/200/200",
+    image: "/images/皮肤病/图片4.png",
     weatherIcon: Sun,
     weatherColor: "text-amber-500"
   },
@@ -23,7 +23,7 @@ const HISTORY_DATA = [
     humidity: "82%",
     status: "状态平稳，红肿消退。持续保持温和补水。",
     tags: ["透明质酸乳液", "物理防晒"],
-    image: "https://picsum.photos/seed/skin5/200/200",
+    image: "/images/皮肤病/图片5.png",
     weatherIcon: Cloud,
     weatherColor: "text-blue-500"
   },

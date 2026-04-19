@@ -288,11 +288,11 @@ def test_workflow_with_mock_data():
             needs_doctor = result.get("needs_doctor", False)
 
             verdict_display = {
-                "better": "✅ 好转",
-                "worse": "⚠️ 恶化",
-                "stable": "➡️ 稳定",
-                "insufficient": "❓ 数据不足",
-                "uncertain": "❓ 不确定"
+                "better": "好转",
+                "worse": "恶化",
+                "stable": "稳定",
+                "insufficient": "数据不足",
+                "uncertain": "不确定"
             }
 
             print(f"最终判定: {verdict_display.get(verdict, verdict)}")
@@ -300,7 +300,7 @@ def test_workflow_with_mock_data():
             print(f"决策理由: {decision.get('reason', 'N/A')}")
             print(f"置信度: {decision.get('confidence', 'N/A')}")
             print(f"风险等级: {decision.get('risk_level', 'N/A')}")
-            print(f"需要医生: {'是 ⚠️' if needs_doctor else '否'}")
+            print(f"需要医生: {'是' if needs_doctor else '否'}")
 
             if result.get("final_report"):
                 report = result["final_report"]
@@ -325,7 +325,7 @@ def test_workflow_with_mock_data():
                 print(f"  找到相似案例: {len(similar)}个")
 
         except Exception as e:
-            print(f"❌ 执行出错: {type(e).__name__}: {e}")
+            print(f"执行出错: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
 

@@ -10,15 +10,6 @@ class ReportRenderer:
     """报告渲染工具类"""
 
     def render(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        渲染报告
-
-        Args:
-            data: 报告数据
-
-        Returns:
-            渲染后的报告
-        """
         return {
             "report_type": data.get("report_type", "disease_trend_30d"),
             "generated_at": data.get("generated_at", datetime.now().isoformat()),
@@ -32,28 +23,10 @@ class ReportRenderer:
         }
 
     def to_json(self, data: Dict[str, Any]) -> str:
-        """
-        将报告转换为JSON字符串
-
-        Args:
-            data: 报告数据
-
-        Returns:
-            JSON字符串
-        """
         import json
         return json.dumps(data, ensure_ascii=False, indent=2)
 
     def to_markdown(self, data: Dict[str, Any]) -> str:
-        """
-        将报告转换为Markdown格式
-
-        Args:
-            data: 报告数据
-
-        Returns:
-            Markdown字符串
-        """
         summary = data.get("executive_summary", {})
         analysis = data.get("trend_analysis", {})
 

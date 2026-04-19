@@ -1,9 +1,13 @@
 import json
 import re
 import os
+import sys
 from pathlib import Path
 
-# 加载 backend 目录的 .env 文件
+# 添加backend目录到Python路径（必须在导入agents模块之前）
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
+
+# 加载backend目录的.env文件
 backend_dir = Path(__file__).resolve().parent.parent.parent.parent / "backend"
 env_file = backend_dir / ".env"
 if env_file.exists():
@@ -12,8 +16,8 @@ if env_file.exists():
         load_dotenv(env_file, override=True)
     except ImportError:
         pass
-    
-    # 手动解析 .env 文件设置环境变量（处理引号问题）
+
+    # 手动解析.env
     try:
         with open(env_file, 'r', encoding='utf-8') as f:
             for line in f:
@@ -47,7 +51,7 @@ def parse_json_body(request):
     try:
         return json.loads(request.body.decode("utf-8") or "{}")
     except json.JSONDecodeError as exc:
-        raise ValueError("请求体不是合法 JSON") from exc
+        raise ValueError("请求体不是合法JSON") from exc
 
 
 @require_GET
@@ -77,7 +81,7 @@ def analyze_skin(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def analyze_skin_record(request):
-    """记录皮肤状态 - 分析照片质量和皮肤状态"""
+    """记录皮肤状态"""
     try:
         payload = parse_json_body(request)
         image_base64 = payload.get("imageBase64")
@@ -149,11 +153,10 @@ from datetime import timedelta
 
 
 def get_or_create_user_profile(request):
-    """获取或创建用户资料（简化版，实际应该使用认证系统）"""
-    # 从请求头或session获取用户ID
+    """获取或创建用户资料"""
     user_id = request.headers.get('X-User-Id')
     if not user_id:
-        # 创建一个临时用户
+        # 临时用户
         profile, created = UserProfile.objects.get_or_create(
             nickname='匿名用户',
             defaults={
@@ -162,7 +165,7 @@ def get_or_create_user_profile(request):
             }
         )
         return profile
-    
+
     try:
         profile = UserProfile.objects.get(user_id=user_id)
         return profile
@@ -181,31 +184,25 @@ def get_or_create_user_profile(request):
 def list_posts(request):
     """获取帖子列表"""
     try:
-        # 获取查询参数
         category = request.GET.get('category', '')
         tag = request.GET.get('tag', '')
         sort_by = request.GET.get('sort', 'hot')  # hot, new
         page = int(request.GET.get('page', 1))
         page_size = int(request.GET.get('page_size', 10))
-        
-        # 基础查询
+
         posts = Post.objects.filter(is_deleted=False)
-        
-        # 按标签筛选
+
         if tag:
             posts = posts.filter(tags__contains=[tag])
-        
-        # 排序
+
         if sort_by == 'new':
             posts = posts.order_by('-created_at')
         else:  # hot
             posts = posts.order_by('-is_pinned', '-likes', '-created_at')
-        
-        # 分页
+
         paginator = Paginator(posts, page_size)
         page_obj = paginator.get_page(page)
-        
-        # 序列化数据
+
         posts_data = []
         for post in page_obj:
             author_data = {
@@ -217,7 +214,7 @@ def list_posts(request):
                 'title': post.author.title if not post.is_anonymous else None,
                 'hospital': post.author.hospital if not post.is_anonymous else None,
             }
-            
+
             post_data = {
                 'id': str(post.post_id),
                 'author': author_data,
@@ -230,7 +227,7 @@ def list_posts(request):
                 'comments': post.comments,
                 'shares': post.shares,
             }
-            
+
             # 关联报告
             if post.related_skin_record:
                 record = post.related_skin_record
@@ -242,9 +239,9 @@ def list_posts(request):
                         {'day': 10, 'value': 80},
                     ]
                 }
-            
+
             posts_data.append(post_data)
-        
+
         return JsonResponse({
             'posts': posts_data,
             'total': paginator.count,
@@ -262,7 +259,7 @@ def get_post_detail(request, post_id):
     """获取帖子详情"""
     try:
         post = Post.objects.get(post_id=post_id, is_deleted=False)
-        
+
         author_data = {
             'id': str(post.author.user_id),
             'name': '匿名用户' if post.is_anonymous else post.author.nickname,
@@ -272,7 +269,7 @@ def get_post_detail(request, post_id):
             'title': post.author.title if not post.is_anonymous else None,
             'hospital': post.author.hospital if not post.is_anonymous else None,
         }
-        
+
         post_data = {
             'id': str(post.post_id),
             'author': author_data,
@@ -285,7 +282,7 @@ def get_post_detail(request, post_id):
             'comments': post.comments,
             'shares': post.shares,
         }
-        
+
         # 关联报告
         if post.related_skin_record:
             record = post.related_skin_record
@@ -297,7 +294,7 @@ def get_post_detail(request, post_id):
                     {'day': 10, 'value': 80},
                 ]
             }
-        
+
         # 获取评论
         comments = []
         for comment in post.post_comments.filter(is_deleted=False, parent=None).order_by('-created_at')[:10]:
@@ -316,9 +313,9 @@ def get_post_detail(request, post_id):
                 'time': format_time(comment.created_at),
                 'isExpertReply': comment.is_expert_reply,
             })
-        
+
         post_data['comments_list'] = comments
-        
+
         return JsonResponse(post_data)
     except Post.DoesNotExist:
         return JsonResponse({"message": "帖子不存在"}, status=404)
@@ -332,22 +329,19 @@ def create_post(request):
     """创建帖子"""
     try:
         payload = parse_json_body(request)
-        
-        # 验证必填字段
+
         title = payload.get('title', '').strip()
         content = payload.get('content', '').strip()
-        
+
         if not title:
             return JsonResponse({"message": "标题不能为空"}, status=400)
         if not content:
             return JsonResponse({"message": "内容不能为空"}, status=400)
         if len(title) > 200:
             return JsonResponse({"message": "标题不能超过200字"}, status=400)
-        
-        # 获取用户
+
         author = get_or_create_user_profile(request)
-        
-        # 创建帖子
+
         post = Post.objects.create(
             author=author,
             title=title,
@@ -356,7 +350,7 @@ def create_post(request):
             tags=payload.get('tags', []),
             is_anonymous=payload.get('isAnonymous', False),
         )
-        
+
         # 关联皮肤报告
         skin_record_id = payload.get('skinRecordId')
         if skin_record_id:
@@ -366,7 +360,7 @@ def create_post(request):
                 post.save()
             except SkinRecord.DoesNotExist:
                 pass
-        
+
         return JsonResponse({
             "success": True,
             "message": "发布成功",
@@ -379,14 +373,13 @@ def create_post(request):
 @csrf_exempt
 @require_http_methods(["POST"])
 def like_post(request, post_id):
-    """点赞/取消点赞帖子"""
+    """点赞/取消点赞"""
     try:
         post = Post.objects.get(post_id=post_id, is_deleted=False)
         user = get_or_create_user_profile(request)
-        
-        # 检查是否已点赞
+
         like_exists = PostLike.objects.filter(post=post, user=user).exists()
-        
+
         if like_exists:
             # 取消点赞
             PostLike.objects.filter(post=post, user=user).delete()
@@ -394,7 +387,7 @@ def like_post(request, post_id):
             post.save()
             return JsonResponse({"success": True, "liked": False, "likes": post.likes})
         else:
-            # 添加点赞
+            # 点赞
             PostLike.objects.create(post=post, user=user)
             post.likes += 1
             post.save()
@@ -412,13 +405,13 @@ def create_comment(request, post_id):
     try:
         payload = parse_json_body(request)
         content = payload.get('content', '').strip()
-        
+
         if not content:
             return JsonResponse({"message": "评论内容不能为空"}, status=400)
-        
+
         post = Post.objects.get(post_id=post_id, is_deleted=False)
         user = get_or_create_user_profile(request)
-        
+
         comment = PostComment.objects.create(
             post=post,
             author=user,
@@ -426,11 +419,11 @@ def create_comment(request, post_id):
             parent_id=payload.get('parentId') or None,
             is_expert_reply=user.is_expert
         )
-        
-        # 更新帖子评论数
+
+        # 更新评论数
         post.comments = post.post_comments.filter(is_deleted=False).count()
         post.save()
-        
+
         return JsonResponse({
             "success": True,
             "message": "评论成功",
@@ -445,11 +438,11 @@ def create_comment(request, post_id):
 @csrf_exempt
 @require_http_methods(["GET"])
 def get_skin_records(request):
-    """获取用户的皮肤报告列表"""
+    """获取皮肤报告列表"""
     try:
         user = get_or_create_user_profile(request)
         records = SkinRecord.objects.all().order_by('-created_at')[:10]
-        
+
         records_data = []
         for record in records:
             records_data.append({
@@ -459,7 +452,7 @@ def get_skin_records(request):
                 'skinIssues': record.skin_issues,
                 'photoClarity': record.photo_clarity,
             })
-        
+
         return JsonResponse({
             'records': records_data
         })
@@ -468,7 +461,7 @@ def get_skin_records(request):
 
 
 def format_time(created_at):
-    """格式化时间显示"""
+    """格式化时间"""
     now = timezone.now()
     diff = now - created_at
 
@@ -486,21 +479,16 @@ def format_time(created_at):
 
 # ==================== AI智能医生对话API ====================
 
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
-
 from agents.disease_trend_agent.services.ai_chat_service import chat_with_ai_doctor, stream_chat_with_ai_doctor
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
 def ai_doctor_chat(request):
-    """AI智能医生对话接口 - 基于疾病档案历史记录回答用户问题"""
+    """AI医生对话接口"""
     try:
-        # 调试：确保环境变量已设置
+        # 确保api key已设置
         if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
-            # 手动设置 API Key（临时解决方案）
             os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
             os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
 
@@ -511,29 +499,22 @@ def ai_doctor_chat(request):
         disease_context = payload.get('diseaseContext', '')
         chat_history = payload.get('chatHistory', [])
 
-        print(f"[Django AI Chat] 用户ID: {user_id}")
-        print(f"[Django AI Chat] 消息: {message}")
-        print(f"[Django AI Chat] 疾病上下文: {disease_context}")
-        print(f"[Django AI Chat] 对话历史条数: {len(chat_history)}")
-
         if not message:
             return JsonResponse({"message": "消息不能为空"}, status=400)
 
-        # 优先使用前端传入的历史记录（例如疾病的档案历史记录）
+        # 优先使用前端传入的历史记录
         user_records = payload.get('userRecords')
-        
+
         if not user_records:
-            # 如果前端未传入，则获取用户的最新历史记录
+            # 从数据库获取
             end_date = timezone.now()
             start_date = end_date - timedelta(days=30)
-    
+
             db_records = SkinRecord.objects.filter(
                 created_at__gte=start_date,
                 created_at__lte=end_date
             ).order_by('-created_at')[:10]
-    
-            print(f"[Django AI Chat] 数据库记录数: {db_records.count()}")
-    
+
             user_records = []
             for record in db_records:
                 user_records.append({
@@ -543,11 +524,6 @@ def ai_doctor_chat(request):
                     "user_note": record.user_note or ""
                 })
 
-        print(f"[Django AI Chat] 传递给AI的记录数: {len(user_records) if user_records else 0}")
-        if user_records:
-            print(f"[Django AI Chat] 第一条记录: {user_records[0]}")
-
-        # 调用AI对话服务
         result = chat_with_ai_doctor(
             user_id=user_id,
             message=message,
@@ -561,7 +537,7 @@ def ai_doctor_chat(request):
             "response": result.get("response", ""),
             "timestamp": result.get("timestamp", timezone.now().isoformat())
         })
-        
+
     except ValueError as exc:
         return JsonResponse({"message": str(exc)}, status=400)
     except Exception as exc:
@@ -572,19 +548,17 @@ def ai_doctor_chat(request):
 
 @csrf_exempt
 def ai_doctor_chat_stream(request):
-    """AI智能医生流式对话接口 - 基于疾病档案历史记录回答用户问题"""
+    """AI医生流式对话接口"""
     from django.http import StreamingHttpResponse
-    import json
-    import time
-    
-    # 处理 CORS 预检请求
+
+    # 处理CORS预检
     if request.method == 'OPTIONS':
         response = StreamingHttpResponse('', content_type='text/event-stream')
         response['Access-Control-Allow-Origin'] = '*'
         response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type'
         return response
-    
+
     if request.method != 'POST':
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -649,7 +623,6 @@ def ai_doctor_chat_stream(request):
 
 # ==================== 皮肤保养Agent API ====================
 
-import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..', '..', 'backend'))
 
 from agents.skincare_agent.core.graph import get_workflow as get_skincare_workflow
@@ -659,9 +632,8 @@ from agents.skincare_agent.core.state import SkincareState
 @csrf_exempt
 @require_http_methods(["POST"])
 def skincare_analysis(request):
-    """皮肤保养Agent - 基于皮肤表现分析生成个性化护肤方案"""
+    """皮肤保养Agent"""
     try:
-        # 调试：确保环境变量已设置
         if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
             os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
             os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
@@ -675,13 +647,8 @@ def skincare_analysis(request):
         current_products = payload.get('careItems', [])
         entry_date = payload.get('entryDate', timezone.now().isoformat())
 
-        print(f"[Skincare Agent] 用户ID: {user_id}")
-        print(f"[Skincare Agent] 日记标题: {entry_title}")
-        print(f"[Skincare Agent] 皮肤指标数: {len(skin_metrics)}")
-        print(f"[Skincare Agent] 当前产品数: {len(current_products)}")
-
         # 构建初始状态
-        initial_state: SkincareState = {
+        initial_state = {
             "user_id": user_id,
             "user_input": user_input,
             "current_products": current_products,
@@ -699,7 +666,6 @@ def skincare_analysis(request):
             "final_output": None
         }
 
-        # 获取工作流并执行
         app = get_skincare_workflow()
         config = {"configurable": {"thread_id": user_id}}
         result = app.invoke(initial_state, config=config)
@@ -729,73 +695,62 @@ def skincare_analysis(request):
 from agents.disease_trend_agent import build_workflow, DiseaseTrackingState
 
 
-from django.utils import timezone
-from datetime import timedelta
-
 @csrf_exempt
 @require_http_methods(["POST"])
 def disease_trend_analysis(request):
-    """疾病趋势诊断Agent - 基于30天数据分析病情趋势"""
+    """疾病趋势诊断Agent"""
     try:
-        # 调试：确保环境变量已设置
         if not os.environ.get('DASHSCOPE_API_KEY') and not os.environ.get('BAILIAN_API_KEY'):
-            # 手动设置 API Key（临时解决方案）
             os.environ['DASHSCOPE_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
             os.environ['BAILIAN_API_KEY'] = 'sk-61be8ee9942249cfb284735c015d124f'
-        
+
         payload = parse_json_body(request)
 
         user_id = payload.get('userId', 'test_user')
         target_disease = payload.get('targetDisease', 'acne')
         time_window_days = payload.get('timeWindowDays', 30)
 
-        # 获取真实的历史记录
+        # 获取历史记录
         end_date = timezone.now()
         start_date = end_date - timedelta(days=time_window_days)
-        
-        # 假设通过 request_source 或某种方式关联用户，这里为了演示，获取最近的满足条件的记录
-        # 在真实场景中应该按用户ID过滤
+
         db_records = SkinRecord.objects.filter(
             created_at__gte=start_date,
             created_at__lte=end_date
         ).order_by('created_at')
-        
+
         raw_records = []
         for record in db_records:
-            # 解析 severity
+            # 解析severity
             severity = 1
             if record.skin_overall == '严重':
                 severity = 3
             elif record.skin_overall == '中度':
                 severity = 2
-                
-            # 尝试从 observations 或 skin_issues 中提取病灶数等
+
             lesion_count = len(record.skin_issues) if isinstance(record.skin_issues, list) else 5
-            
+
             raw_records.append({
                 "date": record.created_at.isoformat(),
                 "analysis_result": {
                     "disease": target_disease,
                     "severity": severity,
-                    "lesion_count": lesion_count * 5,  # 估算
-                    "affected_area_percent": lesion_count * 2.0, # 估算
+                    "lesion_count": lesion_count * 5,
+                    "affected_area_percent": lesion_count * 2.0,
                     "confidence": 0.85,
                     "description": record.user_note or "日常记录"
                 }
             })
-            
-        # 如果数据库记录不足，为了演示趋势诊断，我们可能仍然需要一些数据
-        # 但我们现在至少传了真实获取的 raw_records
+
+        # 数据不足时补充模拟数据
         if len(raw_records) < 7:
-            # 自动补充模拟数据以展示Agent的趋势分析能力
-            from agents.disease_trend_agent.utils.data_processor import DataProcessor
             trend_type = payload.get('trend', 'improving')
-            
+
             mock_records = []
             base_date = end_date - timedelta(days=time_window_days)
             for i in range(time_window_days):
                 record_date = base_date + timedelta(days=i)
-                
+
                 if trend_type == "improving":
                     severity = max(1, 3 - int(i / 10))
                     lesion_count = max(5, 30 - int(i * 0.8))
@@ -804,7 +759,7 @@ def disease_trend_analysis(request):
                     severity = min(3, 1 + int(i / 10))
                     lesion_count = min(50, 10 + int(i * 1.2))
                     confidence = 0.9 - (i / time_window_days) * 0.3
-                else: # stable
+                else:  # stable
                     severity = 2
                     lesion_count = 20 + (-2 if i % 2 == 0 else 2)
                     confidence = 0.75 + (-0.05 if i % 2 == 0 else 0.05)
@@ -820,10 +775,10 @@ def disease_trend_analysis(request):
                         "description": f"第{i+1}天分析结果"
                     }
                 })
-            
+
             raw_records = mock_records
-        
-        initial_state: DiseaseTrackingState = {
+
+        initial_state = {
             "user_id": user_id,
             "target_disease": target_disease,
             "case_id": None,
@@ -849,7 +804,7 @@ def disease_trend_analysis(request):
                 "final_verdict": result.get("final_verdict"),
                 "recovery_progress": result.get("recovery_progress"),
                 "final_report": result.get("final_report"),
-                "care_advice": result.get("care_advice", []),  # 添加护理建议
+                "care_advice": result.get("care_advice", []),
                 "needs_doctor": result.get("needs_doctor"),
                 "alerts": result.get("alerts", [])
             }
@@ -864,19 +819,17 @@ def disease_trend_analysis(request):
 
 @csrf_exempt
 def disease_trend_chat_stream(request):
-    """疾病趋势诊断Agent AI医生流式对话接口 - 基于趋势分析结果回答用户问题"""
+    """疾病趋势AI医生流式对话"""
     from django.http import StreamingHttpResponse
-    import json
-    import time
-    
-    # 处理 CORS 预检请求
+
+    # 处理CORS
     if request.method == 'OPTIONS':
         response = StreamingHttpResponse('', content_type='text/event-stream')
         response['Access-Control-Allow-Origin'] = '*'
         response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response['Access-Control-Allow-Headers'] = 'Content-Type'
         return response
-    
+
     if request.method != 'POST':
         return JsonResponse({"error": "Method not allowed"}, status=405)
 
@@ -897,12 +850,10 @@ def disease_trend_chat_stream(request):
                 yield "data: " + json.dumps({"error": "消息不能为空"}) + "\n\n"
                 return
 
-            # 构建趋势分析上下文
+            # 构建上下文
             trend_context = _build_trend_context(trend_result)
-            
-            # 构建系统提示词
             system_prompt = _build_disease_trend_doctor_prompt(trend_context)
-            
+
             # 调用流式LLM
             for chunk in _call_llm_stream(system_prompt, message, chat_history):
                 yield "data: " + json.dumps({"content": chunk}) + "\n\n"
@@ -920,14 +871,13 @@ def disease_trend_chat_stream(request):
     return response
 
 
-def _build_trend_context(trend_result: dict) -> str:
+def _build_trend_context(trend_result):
     """构建趋势分析上下文"""
     if not trend_result:
         return "暂无趋势分析数据"
-    
+
     context_parts = []
-    
-    # 最终诊断结果
+
     final_verdict = trend_result.get('final_verdict', 'unknown')
     verdict_map = {
         'better': '好转',
@@ -936,100 +886,83 @@ def _build_trend_context(trend_result: dict) -> str:
         'insufficient': '数据不足'
     }
     context_parts.append(f"诊断结果: {verdict_map.get(final_verdict, final_verdict)}")
-    
-    # 恢复进度
+
     recovery_progress = trend_result.get('recovery_progress', {})
     if recovery_progress:
         recovery_percent = recovery_progress.get('recovery_percent', 0)
         progress_changed = recovery_progress.get('progress_changed', 'stable')
         estimated_days = recovery_progress.get('estimated_days_to_full_recovery')
-        
+
         context_parts.append(f"恢复进度: {recovery_percent}%")
         context_parts.append(f"趋势变化: {progress_changed}")
         if estimated_days is not None:
             context_parts.append(f"预计完全恢复还需: {estimated_days}天")
-    
-    # 告警信息
+
     alerts = trend_result.get('alerts', [])
     if alerts:
         context_parts.append(f"告警信息: {'; '.join(alerts)}")
-    
-    # 护理建议摘要
+
     care_advice = trend_result.get('care_advice', [])
     if care_advice:
         advice_titles = [a.get('title', '') for a in care_advice[:3]]
         context_parts.append(f"护理建议: {'、'.join(advice_titles)}")
-    
+
     return "\n".join(context_parts)
 
 
-def _build_disease_trend_doctor_prompt(trend_context: str) -> str:
-    """构建疾病趋势AI医生系统提示词"""
-    return f"""你是一位专业的皮肤科医生AI助手，名为"知己肤AI医生"。你正在基于用户的疾病趋势分析结果为其提供个性化咨询。
+def _build_disease_trend_doctor_prompt(trend_context):
+    """构建AI医生提示词"""
+    return f"""你是一位专业的皮肤科医生AI助手，名为"知己肤AI医生"。
 
 ## 当前用户的趋势分析数据
 {trend_context}
 
-## 核心指令（必须遵守）
-1. **基于数据回答**：每次回答都必须引用上述趋势分析数据，不要给通用模板回复！
-2. **解读趋势**：帮助用户理解病情变化趋势（好转/恶化/稳定）
+## 核心指令
+1. **基于数据回答**：每次回答都必须引用上述趋势分析数据
+2. **解读趋势**：帮助用户理解病情变化趋势
 3. **预估恢复时间**：基于恢复进度给出合理的恢复预期
 4. **个性化建议**：根据具体趋势给出针对性的护理建议
 5. **风险提示**：如果趋势显示恶化，必须强烈建议就医
 
 ## 输出格式要求
 - **必须使用Markdown格式输出**
-- 使用 **加粗** 强调重要信息（如关键数据、趋势变化）
-- 使用有序列表(1. 2. 3.)列出建议步骤
-- 使用引用块(>)突出警告或重要提醒
-- 段落之间保持简洁，不要过于冗长
+- 使用 **加粗** 强调重要信息
+- 使用有序列表列出建议步骤
+- 段落之间保持简洁
 
 ## 禁止事项
 - 不要说"我已收到您的问题"这种通用开场白
 - 不要编造用户没有的症状或数据
-- 不要推荐具体药物名称（可以说"外用激素药膏"但不能说"地奈德乳膏"）
-
-## 回答风格示例
-根据您的趋势分析数据，您的病情目前**{{诊断结果}}**，恢复进度为**{{恢复进度}}%**。
-
-针对您的问题，我的建议是：
-1. **{{具体建议1，与趋势数据相关}}**
-2. **{{具体建议2}}**
-
-> 预计**{{时间范围}}**内可以看到明显改善。如果出现**{{危险信号}}**，请及时就医。
+- 不要推荐具体药物名称
 
 现在请回答用户的问题："""
 
 
-def _call_llm_stream(system_prompt: str, user_message: str, chat_history: list):
-    """流式调用大语言模型生成回复"""
+def _call_llm_stream(system_prompt, user_message, chat_history):
+    """流式调用大语言模型"""
     import requests
-    import json
-    
-    # 构建消息列表
+
     messages = [{"role": "system", "content": system_prompt}]
-    
-    # 添加历史对话
-    for msg in chat_history[-5:]:  # 最近5轮对话
+
+    # 添加最近5轮对话
+    for msg in chat_history[-5:]:
         if msg.get("role") == "user":
             messages.append({"role": "user", "content": msg.get("content", "")})
         elif msg.get("role") == "ai":
             messages.append({"role": "assistant", "content": msg.get("content", "")})
-    
-    # 添加当前消息
+
     messages.append({"role": "user", "content": user_message})
-    
-    # 调用阿里云百炼API - 流式
+
     api_key = os.environ.get('DASHSCOPE_API_KEY') or os.environ.get('BAILIAN_API_KEY')
     if not api_key:
         yield "抱歉，AI服务未配置，请联系管理员。"
         return
-    
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
-    
+
     payload = {
         "model": "qwen-plus",
         "messages": messages,
@@ -1037,7 +970,7 @@ def _call_llm_stream(system_prompt: str, user_message: str, chat_history: list):
         "max_tokens": 800,
         "stream": True
     }
-    
+
     try:
         response = requests.post(
             "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
@@ -1046,7 +979,7 @@ def _call_llm_stream(system_prompt: str, user_message: str, chat_history: list):
             timeout=60,
             stream=True
         )
-        
+
         if response.status_code == 200:
             for line in response.iter_lines():
                 if line:

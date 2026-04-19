@@ -1,0 +1,16 @@
+{
+  "Actinic_Keratosis": 0,
+  "Basal_Cell_Carcinoma": 1,
+  "Other": 2,
+  "Squamous_Cell_Carcinoma": 3,
+  "actinic": 4,
+  "arsenical": 5,
+  "basal": 6,
+  "bowens": 7,
+  "ctcl": 8,
+  "cutaneous": 9,
+  "granulation": 10,
+  "leukoplakia": 11,
+  "metastasis": 12,
+  "paget": 13
+}

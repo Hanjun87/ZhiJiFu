@@ -8,15 +8,7 @@ from ..services.aliyun_api import AliyunAPIService
 
 
 def fetch_data_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
-    """
-    拉取30天照片+阿里云API历史结果
-    
-    Args:
-        state: 当前状态
-        
-    Returns:
-        更新后的状态
-    """
+    # 拉取用户历史照片和分析记录
     user_id = state["user_id"]
     target_disease = state.get("target_disease")
     days = state["time_window_days"]

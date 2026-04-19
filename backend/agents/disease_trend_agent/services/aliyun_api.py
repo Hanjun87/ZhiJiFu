@@ -23,32 +23,13 @@ class AliyunAPIService:
         start_date: datetime,
         end_date: datetime
     ) -> List[Dict[str, Any]]:
-        """
-        获取用户的历史分析记录
-        
-        Args:
-            user_id: 用户ID
-            disease_type: 疾病类型（可选）
-            start_date: 开始日期
-            end_date: 结束日期
-            
-        Returns:
-            分析记录列表
-        """
+        # 获取用户指定时间范围内的历史分析记录
         # TODO: 实现实际的API调用，从数据库获取真实历史记录
         # 目前返回空数组，让前端使用本地计算的数据
         return []
     
     def get_user_profile(self, user_id: str) -> Dict[str, Any]:
-        """
-        获取用户画像
-        
-        Args:
-            user_id: 用户ID
-            
-        Returns:
-            用户画像信息
-        """
+        # 获取用户基本信息和肤质档案
         # TODO: 实现实际的API调用
         return {
             "user_id": user_id,

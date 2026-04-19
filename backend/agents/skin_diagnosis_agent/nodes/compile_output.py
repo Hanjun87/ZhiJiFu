@@ -124,7 +124,7 @@ def format_report_for_user(state: DiagnosisState) -> str:
     # 警告信息
     warning = final_output.get('warning')
     if warning:
-        lines.append(f"⚠️ {warning}")
+        lines.append(f"警告: {warning}")
         lines.append("")
     
     # 危险信号
@@ -132,7 +132,7 @@ def format_report_for_user(state: DiagnosisState) -> str:
     if red_flags:
         lines.append("【危险信号】")
         for flag in red_flags:
-            lines.append(f"  ⚠️ {flag}")
+            lines.append(f"  注意: {flag}")
         lines.append("")
     
     # 免责声明

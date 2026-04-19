@@ -1,3 +1,4 @@
+// AI辅助生成：TraeCN, 2026-3-29 - 创建医院页面组件，包含专家预约和我的咨询功能
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { MessageSquare, Calendar, Search, Star, Clock, Video, Users } from 'lucide-react';

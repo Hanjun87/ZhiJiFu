@@ -8,15 +8,7 @@ from ..utils.data_processor import DataProcessor
 
 
 def extract_indicators_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
-    """
-    从API结果提取时序指标
-    
-    Args:
-        state: 当前状态
-        
-    Returns:
-        更新后的状态
-    """
+    # 从分析记录中提取趋势指标
     raw_records = state["raw_records"]
     
     if not raw_records:

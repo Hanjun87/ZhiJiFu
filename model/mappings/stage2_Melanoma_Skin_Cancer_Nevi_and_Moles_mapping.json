@@ -1,0 +1,10 @@
+{
+  "Congenital_Nevus": 0,
+  "Halo_Nevus": 1,
+  "Melanoma": 2,
+  "Nevus": 3,
+  "Other": 4,
+  "atypical": 5,
+  "lentigo": 6,
+  "melanocytic": 7
+}

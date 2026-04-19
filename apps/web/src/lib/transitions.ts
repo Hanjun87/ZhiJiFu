@@ -1,4 +1,5 @@
 import { Page } from '../types';
+import type { Easing } from 'motion/react';
 
 export type TransitionKind = 'push';
 
@@ -32,6 +33,9 @@ const pageDepth: Record<Page, number> = {
   skin_record_analysis: 2,
   skin_record_result: 2,
   disease_trend_test: 1,
+  login: 0,
+  register_user: 0,
+  register_doctor: 0,
 };
 
 export const pagePresenceMode = 'sync';
@@ -49,17 +53,22 @@ export function resolveTransition(from: Page, to: Page): NavigationTransition {
   };
 }
 
+// 定义缓动函数
+const easeOut: Easing = [0.0, 0.0, 0.58, 1.0];
+const easeIn: Easing = [0.42, 0.0, 1.0, 1.0];
+const easeOutCubic: Easing = [0.22, 1, 0.36, 1];
+
 export function getPageTransition(kind: TransitionKind, direction: number, reducedMotion: boolean) {
   if (reducedMotion) {
     return {
       initial: { x: direction * 20 },
       animate: {
         x: 0,
-        transition: { duration: 0.2, ease: 'easeOut' },
+        transition: { duration: 0.2, ease: easeOut },
       },
       exit: {
         x: direction * 20,
-        transition: { duration: 0.2, ease: 'easeIn' },
+        transition: { duration: 0.2, ease: easeIn },
       },
     };
   }
@@ -73,11 +82,11 @@ export function getPageTransition(kind: TransitionKind, direction: number, reduc
       initial: { x: '100%' },
       animate: {
         x: 0,
-        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+        transition: { duration: 0.35, ease: easeOutCubic },
       },
       exit: {
         x: '100%',
-        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+        transition: { duration: 0.35, ease: easeOutCubic },
       },
     };
   } else {
@@ -86,11 +95,11 @@ export function getPageTransition(kind: TransitionKind, direction: number, reduc
       initial: { x: '-30%' },
       animate: {
         x: 0,
-        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+        transition: { duration: 0.35, ease: easeOutCubic },
       },
       exit: {
         x: '100%',
-        transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] },
+        transition: { duration: 0.35, ease: easeOutCubic },
       },
     };
   }

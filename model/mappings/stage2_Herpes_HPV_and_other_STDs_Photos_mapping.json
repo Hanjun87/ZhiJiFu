@@ -1,0 +1,9 @@
+{
+  "AIDS": 0,
+  "Other": 1,
+  "Syphilis": 2,
+  "genital": 3,
+  "herpes": 4,
+  "molluscum": 5,
+  "pearly": 6
+}

@@ -1,3 +1,4 @@
+// AI辅助生成：TraeCN, 2026-3-29 - 添加社区/医院顶部切换导航
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { Search, PenLine, ChevronDown, ChevronUp, Users, Loader2 } from 'lucide-react';
@@ -32,7 +33,14 @@ interface CommunityFeedProps {
 }
 
 export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate, initialTab = 'community' }) => {
-  const [activeTab, setActiveTab] = useState<'community' | 'hospital'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'community' | 'hospital'>('community');
+  
+  // 使用 useEffect 来设置 initialTab，避免 TypeScript 类型收窄问题
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, []);
   const [activeMainCategory, setActiveMainCategory] = useState<'all' | 'skin' | 'wound' | 'whitening'>('all');
   const [activeSubCategory, setActiveSubCategory] = useState<string | null>(null);
   const [isSubCategoryExpanded, setIsSubCategoryExpanded] = useState(false);
@@ -127,7 +135,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate, initia
               whileTap={{ scale: 0.98 }}
               onClick={() => setActiveTab('hospital')}
               className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                activeTab === 'hospital'
+                (activeTab as string) === 'hospital'
                   ? 'bg-blue-500 text-white shadow-md shadow-blue-500/25'
                   : 'text-gray-500 hover:bg-gray-50'
               }`}
@@ -206,7 +214,11 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate, initia
 
           {/* Second Level Navigation - 可展开 */}
           <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100">
-            <div className={`flex flex-wrap gap-2 transition-all duration-300 ${isSubCategoryExpanded ? '' : 'max-h-[76px] overflow-hidden'}`}>
+            <div 
+              className={`flex flex-wrap gap-2 transition-all duration-300 ease-out ${
+                isSubCategoryExpanded ? 'max-h-[500px]' : 'max-h-[38px]'
+              } overflow-hidden`}
+            >
               {currentCategory.subCategories.map((subCat, idx) => {
                 const isActive = activeSubCategory === subCat;
                 return (
@@ -214,7 +226,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate, initia
                     key={idx}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setActiveSubCategory(isActive ? null : subCat)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                       isActive
                         ? 'bg-blue-500 text-white shadow-sm shadow-blue-500/20'
                         : 'bg-gray-50 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
@@ -226,22 +238,21 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ onNavigate, initia
               })}
             </div>
             
-            {/* 展开/收起按钮 */}
-            {currentCategory.subCategories.length > 6 && (
+            {/* 展开/收起按钮 - 当标签超过4个时显示 */}
+            {currentCategory.subCategories.length > 4 && (
               <motion.button
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setIsSubCategoryExpanded(!isSubCategoryExpanded)}
                 className="w-full mt-2 pt-2 border-t border-gray-100 flex items-center justify-center gap-1 text-xs text-gray-400 hover:text-blue-500 transition-colors"
               >
-                {isSubCategoryExpanded ? (
-                  <>
-                    收起 <ChevronUp size={14} />
-                  </>
-                ) : (
-                  <>
-                    展开更多 <ChevronDown size={14} />
-                  </>
-                )}
+                <motion.span
+                  initial={false}
+                  animate={{ rotate: isSubCategoryExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown size={14} />
+                </motion.span>
+                <span>{isSubCategoryExpanded ? '收起' : `展开更多 (${currentCategory.subCategories.length - 4})`}</span>
               </motion.button>
             )}
           </div>

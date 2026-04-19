@@ -1,0 +1,13 @@
+{
+  "Lichen": 0,
+  "Lichen_Nitidus": 1,
+  "Lichen_Planus": 2,
+  "Other": 3,
+  "Pityriasis": 4,
+  "Pityriasis_Rosea": 5,
+  "Pityriasis_Rubra_Pilaris": 6,
+  "Psoriasis": 7,
+  "Uncategorized": 8,
+  "reiter": 9,
+  "seborrheic": 10
+}

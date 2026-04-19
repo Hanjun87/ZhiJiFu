@@ -9,15 +9,7 @@ from .state import SkincareState
 
 
 def build_workflow():
-    """
-    构建皮肤保养Agent工作流
-
-    流程：
-    entry_point → user_analysis → rag_retrieval → ingredient_check → llm_reasoning → compile_output → END
-
-    Returns:
-        编译后的工作流
-    """
+    # 构建皮肤保养Agent工作流
     from ..nodes.user_analysis import user_analysis_node
     from ..nodes.rag_retrieval import rag_retrieval_node
     from ..nodes.ingredient_check import ingredient_check_node
@@ -49,12 +41,6 @@ _workflow_instance = None
 
 
 def get_workflow():
-    """
-    获取工作流实例（单例模式）
-
-    Returns:
-        编译后的工作流实例
-    """
     global _workflow_instance
     if _workflow_instance is None:
         _workflow_instance = build_workflow()

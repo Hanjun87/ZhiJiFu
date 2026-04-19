@@ -11,15 +11,7 @@ from ..utils.care_advisor import generate_care_advice
 
 
 def finalize_report_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
-    """
-    组装最终报告
-
-    Args:
-        state: 当前状态
-
-    Returns:
-        更新后的状态
-    """
+    # 组装最终报告
     indicators = state.get("trend_indicators") or {}
     agent_decision = state.get("agent_decision") or {}
     rag_context = state.get("rag_context")
@@ -165,15 +157,6 @@ def _extract_remaining_issues(indicators: Dict[str, Any]) -> list:
 
 
 def _extract_rag_insights(rag_context: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-    """
-    提取RAG洞察信息
-    
-    Args:
-        rag_context: RAG检索结果
-        
-    Returns:
-        RAG洞察字典
-    """
     if not rag_context:
         return {
             "available": False,

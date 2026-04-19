@@ -79,6 +79,7 @@ android/app/.cxx/
 # Android SDK & JDK (local development tools)
 .android-sdk/
 .jdk*/
+openjdk*/
 
 # Vercel
 .vercel/
@@ -107,3 +108,7 @@ services/django/staticfiles/
 .history/
 *.sublime-project
 *.sublime-workspace
+
+# AI Model files (large files, use assets_backup instead)
+model/models/*.pth
+model/models/**/*.pth

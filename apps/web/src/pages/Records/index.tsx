@@ -1,3 +1,4 @@
+// AI辅助生成：TraeCN, 2026-3-29 - 修改档案界面布局为圆角胶囊样式，删除加号按钮
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { ChevronRight, Eye, Clock } from 'lucide-react';
@@ -20,7 +21,7 @@ const SAMPLE_RECORDS = [
     time: "14:30",
     status: "恢复中" as const,
     statusColor: "bg-emerald-100 text-emerald-700",
-    image: "https://picsum.photos/seed/skin1/200/200",
+    image: "/images/皮肤病/图片4.png",
   },
   {
     id: '2',
@@ -29,7 +30,7 @@ const SAMPLE_RECORDS = [
     time: "10:15",
     status: "待复查" as const,
     statusColor: "bg-blue-100 text-blue-700",
-    image: "https://picsum.photos/seed/skin2/200/200",
+    image: "/images/皮肤病/图片5.png",
   },
 ];
 
@@ -41,7 +42,7 @@ const OLDER_RECORDS = [
     time: "16:50",
     status: "已结束" as const,
     statusColor: "bg-gray-100 text-gray-600",
-    image: "https://picsum.photos/seed/skin3/200/200",
+    image: "/images/皮肤病/图片6.png",
   },
 ];
 
@@ -53,7 +54,7 @@ const SAMPLE_DIARY_ENTRIES = [
     time: "09:30",
     title: "今日皮肤状况",
     status: "良好" as const,
-    image: "https://picsum.photos/seed/diary1/200/200",
+    image: "/images/保养/图片6.png",
     skinMetrics: [
       { label: '色斑', value: 20, detail: '色斑轻微，皮肤整体均匀' },
       { label: '黑头', value: 35, detail: 'T 区有少量黑头' },
@@ -68,7 +69,7 @@ const SAMPLE_DIARY_ENTRIES = [
     time: "18:15",
     title: "晒后修复记录",
     status: "恢复中" as const,
-    image: "https://picsum.photos/seed/diary2/200/200",
+    image: "/images/保养/图片7.png",
     skinMetrics: [
       { label: '色斑', value: 45, detail: '晒后色斑加重，需加强防晒' },
       { label: '黑头', value: 40, detail: '毛孔略显粗大' },
@@ -86,7 +87,7 @@ const OLDER_DIARY_ENTRIES = [
     time: "20:00",
     title: "冬季保湿打卡",
     status: "已结束" as const,
-    image: "https://picsum.photos/seed/diary3/200/200",
+    image: "/images/保养/图片8.png",
     skinMetrics: [
       { label: '色斑', value: 30, detail: '色斑稳定' },
       { label: '黑头', value: 50, detail: '冬季皮肤干燥，黑头明显' },

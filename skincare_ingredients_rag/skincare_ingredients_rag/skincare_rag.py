@@ -36,12 +36,12 @@ class SkincareRAG:
             with open(index_file, 'r', encoding='utf-8') as f:
                 self.index = json.load(f)
             
-            print(f"✅ 成功加载 {len(self.ingredients)} 种成分数据")
-            print(f"📊 证据等级A级: {self.index['evidence_levels']['A级']} 种")
-            print(f"📊 证据等级B级: {self.index['evidence_levels']['B级']} 种")
+            print(f"成功加载 {len(self.ingredients)} 种成分数据")
+            print(f"证据等级A级: {self.index['evidence_levels']['A级']} 种")
+            print(f"证据等级B级: {self.index['evidence_levels']['B级']} 种")
             
         except Exception as e:
-            print(f"❌ 加载数据失败: {e}")
+            print(f"加载数据失败: {e}")
             raise
     
     def get_all_ingredients(self) -> List[Dict]:
@@ -185,32 +185,32 @@ class SkincareRAG:
 【{ingredient['ingredient_name']}】 ({ingredient['ingredient_id']})
 {'='*60}
 
-📋 概述:
+概述:
 {ingredient['overview']}
 
-🏷️ 类别: {ingredient['category']}
-⭐ 证据等级: {ingredient['evidence_level']} ({ingredient['evidence_description']})
-📊 浓度范围: {ingredient['concentration_range']}
-🕐 使用频率: {ingredient['usage_frequency']}
+类别: {ingredient['category']}
+证据等级: {ingredient['evidence_level']} ({ingredient['evidence_description']})
+浓度范围: {ingredient['concentration_range']}
+使用频率: {ingredient['usage_frequency']}
 
-✨ 主要功效:
+主要功效:
 """
         for benefit in ingredient['benefits']:
             text += f"  • {benefit}\n"
         
-        text += "\n🔬 作用机制:\n"
+        text += "\n作用机制:\n"
         for mech in ingredient['mechanism']:
             text += f"  • {mech}\n"
         
-        text += "\n📖 使用方法:\n"
+        text += "\n使用方法:\n"
         for usage in ingredient['usage_instructions']:
             text += f"  • {usage}\n"
         
-        text += "\n⚠️ 注意事项:\n"
+        text += "\n注意事项:\n"
         for precaution in ingredient['precautions']:
             text += f"  • {precaution}\n"
         
-        text += f"\n👥 适合肤质:\n"
+        text += f"\n适合肤质:\n"
         for skin_type in ingredient['suitable_skin_types']:
             text += f"  • {skin_type}\n"
         
@@ -271,7 +271,7 @@ class SkincareRAG:
 def main():
     """主函数 - 交互式查询"""
     print("="*60)
-    print("🌟 美容保养成分RAG知识库")
+    print("美容保养成分RAG知识库")
     print("="*60)
     print("\n基于权威皮肤科学来源的成分数据库")
     print("数据来源: AAD, JID, PubMed, FDA等")
@@ -280,7 +280,7 @@ def main():
     # 初始化RAG
     rag = SkincareRAG()
     
-    print("\n💡 使用提示:")
+    print("\n使用提示:")
     print("  • 输入成分名称查询详细信息")
     print("  • 输入功效关键词(如: 美白、祛痘、抗衰老)")
     print("  • 输入'list'查看所有成分")
@@ -288,17 +288,17 @@ def main():
     
     while True:
         try:
-            question = input("\n🔍 请输入查询内容: ").strip()
+            question = input("\n请输入查询内容: ").strip()
             
             if not question:
                 continue
             
             if question.lower() in ['quit', 'exit', 'q', '退出']:
-                print("\n感谢使用，再见！👋")
+                print("\n感谢使用，再见！")
                 break
             
             if question.lower() in ['list', 'all', '全部']:
-                print("\n📋 所有成分列表:")
+                print("\n所有成分列表:")
                 for ing in rag.get_all_ingredients():
                     print(f"  • {ing['ingredient_name']} ({ing['category']}) [{ing['evidence_level']}]")
                 continue
@@ -308,10 +308,10 @@ def main():
             print("\n" + response)
             
         except KeyboardInterrupt:
-            print("\n\n感谢使用，再见！👋")
+            print("\n\n感谢使用，再见！")
             break
         except Exception as e:
-            print(f"\n❌ 查询出错: {e}")
+            print(f"\n查询出错: {e}")
 
 
 if __name__ == "__main__":

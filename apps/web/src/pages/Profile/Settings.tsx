@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { Globe, Bell, Moon, ChevronRight, Check, Volume2, MessageCircle, Calendar } from 'lucide-react';
+import { Globe, Bell, Moon, ChevronRight, Check, Volume2, MessageCircle, Calendar, LogOut } from 'lucide-react';
 import { Page } from '../../types';
 import BackButton from '../../components/common/BackButton';
 
 interface SettingsProps {
   onBack: () => void;
+  onLogout?: () => void;
 }
 
-export default function Settings({ onBack }: SettingsProps) {
+export default function Settings({ onBack, onLogout }: SettingsProps) {
   const [language, setLanguage] = useState<'zh' | 'en'>('zh');
   const [showLanguageModal, setShowLanguageModal] = useState(false);
   
@@ -177,6 +178,28 @@ export default function Settings({ onBack }: SettingsProps) {
             </div>
           </div>
         </motion.section>
+
+        {/* 退出登录 */}
+        {onLogout && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.25 }}
+            className="mt-6"
+          >
+            <button
+              onClick={() => {
+                if (window.confirm('确定要退出登录吗？')) {
+                  onLogout();
+                }
+              }}
+              className="w-full flex items-center justify-center gap-2 p-4 bg-white rounded-2xl shadow-sm border border-red-100 text-red-500 font-medium hover:bg-red-50 transition-colors"
+            >
+              <LogOut size={18} />
+              <span>退出登录</span>
+            </button>
+          </motion.section>
+        )}
       </div>
 
       {/* 语言选择弹窗 */}

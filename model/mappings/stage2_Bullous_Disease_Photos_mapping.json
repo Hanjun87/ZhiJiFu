@@ -1,0 +1,10 @@
+{
+  "Bullous_Pemphigoid": 0,
+  "Dermatitis_Herpetiformis": 1,
+  "Epidermolysis_Bullosa": 2,
+  "Pemphigus": 3,
+  "dariers": 4,
+  "diabetic": 5,
+  "grovers": 6,
+  "herpes": 7
+}

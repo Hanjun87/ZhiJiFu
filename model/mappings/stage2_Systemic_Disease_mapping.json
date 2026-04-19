@@ -1,0 +1,16 @@
+{
+  "Amyloidosis": 0,
+  "Myxedema": 1,
+  "Other": 2,
+  "Sarcoidosis": 3,
+  "Uncategorized": 4,
+  "Xanthomas": 5,
+  "acanthosis": 6,
+  "diabetes": 7,
+  "gout": 8,
+  "granuloma": 9,
+  "necrobiosis": 10,
+  "neurofibromatosis": 11,
+  "nevoxanthoendothelioma": 12,
+  "tuberous": 13
+}

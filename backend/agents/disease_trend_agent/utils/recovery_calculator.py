@@ -49,10 +49,6 @@ class ReferenceCaseDB:
 
     @classmethod
     def get_recovery_baseline(cls, initial_lesion_count: int, skin_type: str = "mixed") -> int:
-        """
-        根据初始病灶数和肤质获取基准恢复周期
-        使用线性插值估算
-        """
         cases = sorted(cls.ACNE_REFERENCE_CASES, key=lambda x: x["lesion_count"])
 
         if initial_lesion_count >= cases[-1]["lesion_count"]:
@@ -92,16 +88,6 @@ class AdvancedRecoveryCalculator:
         records: List[Dict[str, Any]],
         user_profile: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
-        """
-        计算恢复进度
-
-        Args:
-            records: 分析记录列表，每条记录包含 analysis_result
-            user_profile: 用户画像（包含肤质等信息）
-
-        Returns:
-            恢复进度字典
-        """
         if not records or len(records) < 2:
             return self._insufficient_data_response()
 
@@ -173,7 +159,6 @@ class AdvancedRecoveryCalculator:
         }
 
     def _extract_metrics(self, records: List[Dict[str, Any]]) -> Optional[RecoveryMetrics]:
-        """提取关键指标"""
         try:
             first = records[0].get("analysis_result", {})
             last = records[-1].get("analysis_result", {})
@@ -194,7 +179,6 @@ class AdvancedRecoveryCalculator:
             return None
 
     def _calculate_lesion_recovery(self, m: RecoveryMetrics) -> Dict[str, Any]:
-        """计算病灶数恢复进度"""
         if m.lesion_count_initial <= self.min_lesion_count:
             return {"percent": 100, "change_str": "0%", "weight": 0.4}
 
@@ -218,7 +202,6 @@ class AdvancedRecoveryCalculator:
         }
 
     def _calculate_area_recovery(self, m: RecoveryMetrics) -> Dict[str, Any]:
-        """计算面积恢复进度"""
         if m.area_percent_initial <= self.min_area_percent:
             return {"percent": 100, "change_str": "0%", "weight": 0.35}
 
@@ -242,7 +225,6 @@ class AdvancedRecoveryCalculator:
         }
 
     def _calculate_severity_recovery(self, m: RecoveryMetrics) -> Dict[str, Any]:
-        """计算严重度恢复进度"""
         if m.severity_current > m.severity_initial:
             # 严重度增加（恶化）
             percent = 0
@@ -260,10 +242,6 @@ class AdvancedRecoveryCalculator:
         }
 
     def _linear_fit_prediction(self, records: List[Dict[str, Any]]) -> Tuple[float, float]:
-        """
-        线性拟合病灶数变化，返回 (斜率, 截距)
-        y = slope * x + intercept
-        """
         n = len(records)
         if n < 2:
             return 0.0, 0.0
@@ -292,10 +270,6 @@ class AdvancedRecoveryCalculator:
         skin_type: str,
         linear_fit: Tuple[float, float]
     ) -> Optional[int]:
-        """
-        估算完全恢复所需天数
-        结合线性拟合和参考病例
-        """
         slope, intercept = linear_fit
 
         if m.lesion_count_current <= self.min_lesion_count:
@@ -318,7 +292,6 @@ class AdvancedRecoveryCalculator:
         return max(1, int(remaining_baseline))
 
     def _calculate_trend(self, records: List[Dict[str, Any]]) -> TrendDirection:
-        """计算趋势方向"""
         if len(records) < 3:
             return TrendDirection.UNCERTAIN
 
@@ -344,7 +317,6 @@ class AdvancedRecoveryCalculator:
             return TrendDirection.WORSTENING
 
     def _calculate_velocity(self, values: List[float]) -> float:
-        """计算变化速度（每天变化量）"""
         if len(values) < 2:
             return 0.0
 
@@ -354,7 +326,6 @@ class AdvancedRecoveryCalculator:
         return total_change / days if days > 0 else 0.0
 
     def _is_accelerating(self, records: List[Dict[str, Any]]) -> bool:
-        """判断恢复是否在加速"""
         if len(records) < 4:
             return False
 
@@ -373,7 +344,6 @@ class AdvancedRecoveryCalculator:
         return second_half_avg < first_half_avg
 
     def _calculate_confidence(self, data_points: int) -> float:
-        """根据数据点数量计算置信度"""
         if data_points >= 14:
             return 0.95
         elif data_points >= 7:
@@ -386,7 +356,6 @@ class AdvancedRecoveryCalculator:
             return 0.2
 
     def _insufficient_data_response(self) -> Dict[str, Any]:
-        """数据不足时的默认响应"""
         return {
             "recovery_percent": 0,
             "estimated_days_to_full_recovery": None,
@@ -409,18 +378,6 @@ def calculate_recovery_progress(
     user_profile: Optional[Dict[str, Any]] = None,
     start_date: Optional[str] = None
 ) -> Dict[str, Any]:
-    """
-    计算恢复进度的便捷函数
-
-    Args:
-        records: 分析记录列表
-        time_window_days: 时间窗口天数
-        user_profile: 用户画像
-        start_date: 开始日期
-
-    Returns:
-        恢复进度字典
-    """
     result = calculator.calculate(records, user_profile)
 
     if start_date:

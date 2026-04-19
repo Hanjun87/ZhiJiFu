@@ -9,15 +9,7 @@ from ..config.settings import settings
 
 
 def init_config_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
-    """
-    初始化30天窗口，分配/匹配case_id
-    
-    Args:
-        state: 当前状态
-        
-    Returns:
-        更新后的状态
-    """
+    # 初始化配置，分配case_id
     # 分配case_id（如果是新案例）
     if not state.get("case_id"):
         state["case_id"] = f"case_{uuid.uuid4().hex[:8]}"

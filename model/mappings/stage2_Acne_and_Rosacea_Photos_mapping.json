@@ -1,0 +1,15 @@
+{
+  "Acne_Closed_Comedo": 0,
+  "Acne_Cystic": 1,
+  "Acne_Excoriated": 2,
+  "Acne_Infantile": 3,
+  "Acne_Open_Comedo": 4,
+  "Acne_Pustular": 5,
+  "Acne_Scar": 6,
+  "Hidradenitis_Suppurativa": 7,
+  "Milia": 8,
+  "Other": 9,
+  "Perioral_Dermatitis": 10,
+  "Rhinophyma": 11,
+  "Rosacea": 12
+}

@@ -1,6 +1,5 @@
 """
-第一层：用户分析节点
-解析用户输入，构建用户皮肤画像
+用户分析节点
 """
 
 import json
@@ -14,15 +13,7 @@ from ..config.prompts import USER_ANALYSIS_PROMPT
 
 
 def user_analysis_node(state: SkincareState) -> Dict[str, Any]:
-    """
-    用户分析节点 - 解析用户输入构建用户画像
-
-    Args:
-        state: 当前状态
-
-    Returns:
-        包含skin_profile的字典
-    """
+    # 解析用户输入，构建皮肤画像
     try:
         return user_analysis_with_llm(state)
     except Exception as e:
@@ -31,15 +22,11 @@ def user_analysis_node(state: SkincareState) -> Dict[str, Any]:
 
 
 def user_analysis_with_llm(state: SkincareState) -> Dict[str, Any]:
-    """
-    调用LLM进行用户分析
-    """
     api_key = settings.get_api_key()
     if not api_key:
         raise ValueError("未配置API Key")
 
-    base_url = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    client = OpenAI(api_key=api_key, base_url=base_url)
+    client = OpenAI(api_key=api_key, base_url="https://dashscope.aliyuncs.com/compatible-mode/v1")
 
     user_info = _build_user_info(state)
     prompt = USER_ANALYSIS_PROMPT.format(user_info=user_info)
@@ -47,7 +34,7 @@ def user_analysis_with_llm(state: SkincareState) -> Dict[str, Any]:
     response = client.chat.completions.create(
         model=settings.BAILIAN_MODEL,
         messages=[
-            {"role": "system", "content": "你是一个专业的皮肤科护肤顾问。"},
+            {"role": "system", "content": "你是皮肤科护肤顾问。"},
             {"role": "user", "content": prompt}
         ],
         temperature=0.3,
@@ -56,29 +43,26 @@ def user_analysis_with_llm(state: SkincareState) -> Dict[str, Any]:
 
     content = response.choices[0].message.content
 
+    # 解析JSON响应
     try:
         if content.startswith("```json"):
             content = content[7:]
         if content.endswith("```"):
             content = content[:-3]
-        content = content.strip()
-
-        skin_profile = json.loads(content)
+        skin_profile = json.loads(content.strip())
     except json.JSONDecodeError:
         import re
         json_match = re.search(r'\{.*\}', content, re.DOTALL)
         if json_match:
             skin_profile = json.loads(json_match.group())
         else:
-            raise ValueError(f"无法解析用户分析输出: {content}")
+            raise ValueError(f"无法解析输出: {content}")
 
     return {"skin_profile": skin_profile}
 
 
 def user_analysis_with_defaults(state: SkincareState) -> Dict[str, Any]:
-    """
-    使用默认画像（当LLM调用失败时）
-    """
+    # LLM失败时的默认画像
     default_profile = {
         "skin_type": "混合",
         "skin_concerns": ["痘痘", "毛孔粗大"],
@@ -92,9 +76,7 @@ def user_analysis_with_defaults(state: SkincareState) -> Dict[str, Any]:
 
 
 def _build_user_info(state: SkincareState) -> str:
-    """
-    构建用户信息字符串
-    """
+    # 拼接用户信息
     parts = []
 
     entry_title = state.get("entry_title", "")

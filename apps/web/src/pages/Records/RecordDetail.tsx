@@ -6,7 +6,7 @@ import {
   TrendingUp, Shield, History, Bot, Send, User, 
   Phone, FileText, X, Clock, Target, TrendingDown, Minus,
   ChevronDown, ChevronUp, Heart, Sun, Droplets, Utensils, Moon, Sparkles,
-  Play, Loader2, Camera, Stethoscope, Activity
+  Play, Loader2, Camera, Stethoscope, Activity, FlaskConical
 } from 'lucide-react';
 import { Record as SkinRecord } from '../../types';
 import BackButton from '../../components/common/BackButton';
@@ -293,6 +293,9 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
   const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const [showRecoveryDetails, setShowRecoveryDetails] = useState(false);
   const [expandedAdvice, setExpandedAdvice] = useState<string[]>([]);
+  const [showCareAdvice, setShowCareAdvice] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState(0);
+  const [recoveryProgress, setRecoveryProgress] = useState(0);
 
   // 新记录检测状态
   const [hasNewRecords, setHasNewRecords] = useState(false);
@@ -660,8 +663,8 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
   const agentRecoveryProgress = calculatedRecoveryProgress;
 
   // 优先使用后端直接返回的 care_advice，如果没有则从 final_report 中获取
-  const agentCareAdvice = trendResult?.success
-    ? (trendResult.result?.care_advice || trendResult.result?.final_report?.care_advice || trendResult.result?.final_report?.executive_summary?.care_advice)
+  const agentCareAdvice = trendResult?.success && trendResult.result
+    ? ((trendResult.result as any).care_advice || (trendResult.result.final_report as any)?.care_advice || (trendResult.result.final_report?.executive_summary as any)?.care_advice)
     : null;
 
   // 按优先级排序（high > medium > low）
@@ -681,7 +684,15 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
         <div className="flex items-center justify-between">
           <BackButton onClick={onBack} />
           <h1 className="text-lg font-bold text-gray-900">档案详情</h1>
-          <div className="w-10" />
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => onNavigate?.('disease_trend_test')}
+            className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 hover:bg-purple-200 transition-colors"
+            title="疾病趋势Agent测试"
+          >
+            <FlaskConical size={20} />
+          </motion.button>
         </div>
       </header>
 
@@ -806,358 +817,249 @@ export default function RecordDetail({ record, onBack, onNavigate }: RecordDetai
           </AnimatePresence>
         </motion.div>
 
-        {/* AI趋势分析区域 */}
+        {/* 拍照识别记录 */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
-          className="mb-5"
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mb-5 bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
         >
-          {!hasAnalyzed ? (
-            // 未分析状态 - 显示开始分析按钮
-            <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl p-6 shadow-sm border border-purple-100">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <Bot size={24} className="text-purple-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">AI趋势分析</h3>
-                  <p className="text-sm text-gray-500">基于您的历史数据生成个性化分析</p>
-                </div>
-              </div>
-              <motion.button
-                whileTap={{ scale: 0.98 }}
-                onClick={fetchTrendAnalysis}
-                className="w-full py-3 px-4 bg-purple-500 text-white rounded-xl font-semibold text-sm hover:bg-purple-600 transition-colors flex items-center justify-center gap-2 shadow-md shadow-purple-200"
-              >
-                <Play size={18} />
-                开始AI分析
-              </motion.button>
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center">
+              <Camera size={18} className="text-indigo-600" />
             </div>
-          ) : trendLoading ? (
-            // 分析中状态
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-              <div className="flex flex-col items-center justify-center py-8">
-                <div className="w-16 h-16 bg-purple-50 rounded-full flex items-center justify-center mb-4">
-                  <Loader2 size={32} className="text-purple-500 animate-spin" />
-                </div>
-                <h3 className="font-bold text-gray-900 mb-2">AI正在分析中...</h3>
-                <p className="text-sm text-gray-500 text-center">
-                  正在根据您的皮肤数据生成恢复进度和护理建议
+            <h3 className="font-bold text-gray-900">拍照识别记录</h3>
+          </div>
+
+          {/* 识别的照片 */}
+          <div className="mb-4">
+            <div className="relative rounded-xl overflow-hidden bg-gray-100 aspect-video">
+              <img 
+                src={displayRecord.image || '/images/皮肤病/图片4.png'} 
+                alt="识别照片" 
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-3 right-3 px-3 py-1.5 bg-black/60 backdrop-blur-sm rounded-full text-white text-xs">
+                识别时间: {displayRecord.date}
+              </div>
+            </div>
+          </div>
+
+          {/* 识别结果详情 */}
+          <div className="space-y-3">
+            {/* 疾病名称和置信度 */}
+            <div className="flex items-center justify-between p-3 bg-indigo-50 rounded-xl">
+              <div>
+                <p className="text-xs text-gray-500 mb-1">识别结果</p>
+                <p className="font-bold text-gray-900">{displayRecord.title}</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-gray-500 mb-1">匹配度</p>
+                <span className="text-xl font-bold text-indigo-600">{displayRecord.probability}%</span>
+              </div>
+            </div>
+
+            {/* 识别指标 */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <p className="text-[10px] text-gray-400 mb-1">病灶数</p>
+                <p className="font-bold text-gray-900">{currentHistory?.lesionCount || 12}</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <p className="text-[10px] text-gray-400 mb-1">受累面积</p>
+                <p className="font-bold text-gray-900">{currentHistory?.affectedArea || 15}%</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl text-center">
+                <p className="text-[10px] text-gray-400 mb-1">严重度</p>
+                <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                  (currentHistory?.severity || 2) === 1 ? 'bg-green-100 text-green-700' :
+                  (currentHistory?.severity || 2) === 2 ? 'bg-amber-100 text-amber-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  {currentHistory?.severityLabel || '中度'}
+                </span>
+              </div>
+            </div>
+
+            {/* 护理建议摘要 */}
+            {(currentHistory?.careAdvice || displayRecord.careAdvice) && (
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <p className="text-xs text-amber-700 font-medium mb-2 flex items-center gap-1">
+                  <Shield size={12} />
+                  识别时建议
                 </p>
-                <div className="flex gap-2 mt-4">
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <span className="w-2 h-2 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
+                <ul className="space-y-1.5">
+                  {(currentHistory?.careAdvice || displayRecord.careAdvice || []).slice(0, 3).map((advice: any, idx: number) => (
+                    <li key={idx} className="flex items-start gap-2 text-xs text-gray-700">
+                      <span className="w-1.5 h-1.5 bg-amber-400 rounded-full mt-1.5 flex-shrink-0" />
+                      <span>{typeof advice === 'string' ? advice : advice.title}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
+            )}
+          </div>
+        </motion.div>
+
+        {/* AI趋势分析 */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          className="mb-5 bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-50 flex items-center justify-center">
+                <TrendingUp size={18} className="text-purple-600" />
+              </div>
+              <h3 className="font-bold text-gray-900">AI趋势分析</h3>
             </div>
-          ) : (
-            // 分析完成 - 显示结果
-            <>
-              {/* 新记录提示 */}
-              {hasNewRecords && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                      <Sparkles size={20} className="text-amber-600" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-gray-900 text-sm">检测到新记录</p>
-                      <p className="text-xs text-gray-500">有新的历史记录可用于分析</p>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={fetchTrendAnalysis}
-                    className="px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
-                  >
-                    重新分析
-                  </motion.button>
-                </motion.div>
-              )}
+            {hasNewRecords && (
+              <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded-full font-medium animate-pulse">
+                有新记录
+              </span>
+            )}
+          </div>
 
-              {/* 分析信息 */}
-              {savedAnalysisDate && !hasNewRecords && (
-                <div className="mb-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    <Clock size={14} />
-                    <span>上次分析: {new Date(savedAnalysisDate).toLocaleString('zh-CN')}</span>
-                  </div>
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={fetchTrendAnalysis}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-xs font-medium hover:bg-purple-100 transition-colors"
-                  >
-                    <Play size={12} />
-                    重新分析
-                  </motion.button>
-                </div>
-              )}
-
+          {/* 分析按钮或加载状态 */}
+          {!hasAnalyzed ? (
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => {
+                setAnalysisProgress(0);
+                const interval = setInterval(() => {
+                  setAnalysisProgress(prev => {
+                    if (prev >= 100) {
+                      clearInterval(interval);
+                      return 100;
+                    }
+                    return prev + 10;
+                  });
+                }, 200);
+                fetchTrendAnalysis();
+              }}
+              className="w-full py-3 px-4 bg-purple-500 text-white rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-purple-600 transition-colors"
+            >
+              <Play size={18} />
+              开始AI分析
+            </motion.button>
+          ) : trendLoading ? (
+            <div className="text-center py-6">
+              <Loader2 size={32} className="animate-spin mx-auto text-purple-500 mb-3" />
+              <p className="text-sm text-gray-600">AI正在分析您的皮肤趋势...</p>
+              <div className="mt-3 h-2 bg-gray-100 rounded-full overflow-hidden max-w-xs mx-auto">
+                <div 
+                  className="h-full bg-purple-500 transition-all duration-300"
+                  style={{ width: `${analysisProgress}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-2">{analysisProgress}%</p>
+            </div>
+          ) : trendResult?.success ? (
+            <div className="space-y-4">
               {/* 恢复进度 */}
-              <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                      currentTrend === 'improving' ? 'bg-emerald-50' :
-                      currentTrend === 'worsening' ? 'bg-red-50' :
-                      'bg-blue-50'
-                    }`}>
-                      {currentTrend === 'improving' ? <TrendingDown size={18} className="text-emerald-600" /> :
-                       currentTrend === 'worsening' ? <TrendingUp size={18} className="text-red-600" /> :
-                       <Minus size={18} className="text-blue-600" />}
-                    </div>
-                    {currentTrend === 'improving' ? '恢复良好' :
-                     currentTrend === 'worsening' ? '需要关注' :
-                     '恢复进度'}
-                  </h3>
-                  {agentRecoveryProgress && (
-                    <button
-                      onClick={() => setShowRecoveryDetails(!showRecoveryDetails)}
-                      className="text-xs text-blue-500 flex items-center gap-1"
-                    >
-                      {showRecoveryDetails ? '收起详情' : '查看详情'}
-                      {showRecoveryDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </button>
-                  )}
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">恢复进度</span>
+                  <span className="text-lg font-bold text-purple-600">{agentRecoveryProgress}%</span>
                 </div>
-                
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  {agentRecoveryProgress ? (
-                    <>
-                      {/* 主要进度条 */}
-                      <div className="space-y-3 mb-4">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-500">总体恢复进度</span>
-                          <span className={`font-bold ${
-                            currentTrend === 'improving' ? 'text-emerald-600' :
-                            currentTrend === 'worsening' ? 'text-red-600' :
-                            'text-blue-600'
-                          }`}>
-                            {agentRecoveryProgress.recovery_percent}%
-                          </span>
-                        </div>
-                        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${agentRecoveryProgress.recovery_percent}%` }}
-                            transition={{ duration: 1, delay: 0.3 }}
-                            className={`h-full rounded-full ${
-                              currentTrend === 'improving' ? 'bg-gradient-to-r from-emerald-400 to-emerald-500' :
-                              currentTrend === 'worsening' ? 'bg-gradient-to-r from-red-400 to-red-500' :
-                              'bg-gradient-to-r from-blue-400 to-blue-500'
-                            }`}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-400">
-                          {getTrendIcon(currentTrend)}
-                          <span>{getTrendText(currentTrend)}</span>
-                        </div>
-                      </div>
-
-                      {/* 预计恢复时间 */}
-                      {agentRecoveryProgress.estimated_days_to_full_recovery !== null && (
-                        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl mb-4">
-                          <Clock size={18} className="text-blue-500" />
-                          <div>
-                            <p className="text-sm text-blue-700 font-medium">
-                              预计还需 {agentRecoveryProgress.estimated_days_to_full_recovery} 天完全恢复
-                            </p>
-                            <p className="text-xs text-blue-500">
-                              开始时间: {new Date(agentRecoveryProgress.started_at).toLocaleDateString('zh-CN')}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 恢复详情 */}
-                      <AnimatePresence>
-                        {showRecoveryDetails && agentRecoveryProgress?.details && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            className="space-y-3 overflow-hidden"
-                          >
-                            <div className="h-px bg-gray-100 my-3" />
-
-                            {/* 病灶恢复 */}
-                            <div className="p-3 bg-white rounded-xl">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">病灶恢复</span>
-                                <span className={`text-sm font-medium ${
-                                  agentRecoveryProgress.details.lesion_recovery.percent > 0 ? 'text-emerald-600' : 'text-red-600'
-                                }`}>
-                                  {agentRecoveryProgress.details.lesion_recovery.percent}%
-                                </span>
-                              </div>
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${Math.min(agentRecoveryProgress.details.lesion_recovery.percent, 100)}%` }}
-                                  transition={{ duration: 0.8, delay: 0.5 }}
-                                  className={`h-full rounded-full ${
-                                    agentRecoveryProgress.details.lesion_recovery.percent > 0 ? 'bg-emerald-400' : 'bg-red-400'
-                                  }`}
-                                />
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">
-                                变化: {agentRecoveryProgress.details.lesion_recovery.change}
-                              </p>
-                            </div>
-
-                            {/* 面积恢复 */}
-                            <div className="p-3 bg-white rounded-xl">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">面积恢复</span>
-                                <span className={`text-sm font-medium ${
-                                  agentRecoveryProgress.details.area_recovery.percent > 0 ? 'text-blue-600' : 'text-red-600'
-                                }`}>
-                                  {agentRecoveryProgress.details.area_recovery.percent}%
-                                </span>
-                              </div>
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${Math.min(agentRecoveryProgress.details.area_recovery.percent, 100)}%` }}
-                                  transition={{ duration: 0.8, delay: 0.6 }}
-                                  className={`h-full rounded-full ${
-                                    agentRecoveryProgress.details.area_recovery.percent > 0 ? 'bg-blue-400' : 'bg-red-400'
-                                  }`}
-                                />
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">
-                                变化: {agentRecoveryProgress.details.area_recovery.change}
-                              </p>
-                            </div>
-
-                            {/* 严重度恢复 */}
-                            <div className="p-3 bg-white rounded-xl">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="text-sm text-gray-600">严重度恢复</span>
-                                <span className={`text-sm font-medium ${
-                                  agentRecoveryProgress.details.severity_recovery.percent > 0 ? 'text-purple-600' : 'text-red-600'
-                                }`}>
-                                  {agentRecoveryProgress.details.severity_recovery.percent}%
-                                </span>
-                              </div>
-                              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  animate={{ width: `${Math.min(agentRecoveryProgress.details.severity_recovery.percent, 100)}%` }}
-                                  transition={{ duration: 0.8, delay: 0.7 }}
-                                  className={`h-full rounded-full ${
-                                    agentRecoveryProgress.details.severity_recovery.percent > 0 ? 'bg-purple-400' : 'bg-red-400'
-                                  }`}
-                                />
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">
-                                从等级 {agentRecoveryProgress.details.severity_recovery.from_level} 到等级 {agentRecoveryProgress.details.severity_recovery.to_level}
-                              </p>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </>
-                  ) : (
-                    // 分析失败或无数据
-                    <div className="text-center py-4">
-                      <p className="text-sm text-gray-500">暂无恢复进度数据</p>
-                      <button
-                        onClick={fetchTrendAnalysis}
-                        className="mt-2 text-xs text-blue-500 hover:text-blue-600"
-                      >
-                        重新分析
-                      </button>
-                    </div>
-                  )}
+                <div className="h-2.5 bg-white rounded-full overflow-hidden shadow-inner">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${agentRecoveryProgress}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"
+                  />
                 </div>
+                {agentVerdict && (
+                  <div className="flex items-center gap-2 mt-2">
+                    {getTrendIcon(agentVerdict)}
+                    <span className="text-xs text-gray-600">{getTrendText(agentVerdict)}</span>
+                  </div>
+                )}
               </div>
 
-              {/* AI护理建议 - 采用简洁列表样式，可展开查看详情，按优先级排序 */}
+              {/* 护理建议 */}
               {sortedCareAdvice && sortedCareAdvice.length > 0 && (
-                <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                  <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-blue-50 flex items-center justify-center">
-                      <Shield size={18} className="text-blue-600" />
+                <div>
+                  <motion.button
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setShowCareAdvice(!showCareAdvice)}
+                    className="w-full flex items-center justify-between p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Shield size={18} className="text-purple-600" />
+                      <span className="font-medium text-gray-900">护理建议</span>
+                      <span className="text-xs text-gray-400">({sortedCareAdvice.length}条)</span>
                     </div>
-                    AI护理建议
-                    <span className="ml-auto text-xs text-green-600 font-medium">AI生成</span>
-                  </h3>
-
-                  <div className="space-y-3">
-                    {sortedCareAdvice.map((advice: CareAdviceItem, index: number) => (
+                    {showCareAdvice ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
+                  </motion.button>
+                  
+                  <AnimatePresence>
+                    {showCareAdvice && (
                       <motion.div
-                        key={advice.category}
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.1 }}
-                        className="border border-gray-100 rounded-xl overflow-hidden"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
                       >
-                        <button
-                          onClick={() => toggleAdvice(advice.category)}
-                          className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="w-5 h-5 rounded-full bg-blue-500 text-white text-xs font-bold flex items-center justify-center shrink-0">
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 text-left">
-                            <h4 className="font-bold text-gray-900 text-sm">{advice.title}</h4>
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-1">{advice.description}</p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <span className={`text-xs px-2 py-1 rounded-full ${priorityStyles[advice.priority]?.bg} ${priorityStyles[advice.priority]?.text}`}>
-                              {priorityStyles[advice.priority]?.label}
-                            </span>
-                            {expandedAdvice.includes(advice.category) ? (
-                              <ChevronUp size={16} className="text-gray-400" />
-                            ) : (
-                              <ChevronDown size={16} className="text-gray-400" />
-                            )}
-                          </div>
-                        </button>
-
-                        <AnimatePresence>
-                          {expandedAdvice.includes(advice.category) && (
+                        <div className="mt-3 space-y-2">
+                          {sortedCareAdvice.map((advice: any, idx: number) => (
                             <motion.div
-                              initial={{ opacity: 0, height: 0 }}
-                              animate={{ opacity: 1, height: 'auto' }}
-                              exit={{ opacity: 0, height: 0 }}
-                              className="overflow-hidden"
+                              key={idx}
+                              initial={{ opacity: 0, x: -10 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                              className="p-3 bg-amber-50 rounded-xl border border-amber-100"
                             >
-                              <div className="p-3 bg-white border-t border-gray-100">
-                                <p className="text-sm text-gray-600 mb-3">{advice.description}</p>
-
-                                {advice.frequency && (
-                                  <div className="flex items-center gap-2 mb-3 text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
-                                    <Clock size={14} />
-                                    <span>建议频率: {advice.frequency}</span>
-                                  </div>
-                                )}
-
-                                <ul className="space-y-2">
-                                  {advice.tips.map((tip: string, tipIndex: number) => (
-                                    <li key={tipIndex} className="flex items-start gap-2 text-sm text-gray-700">
-                                      <Sparkles size={14} className="text-amber-400 mt-0.5 flex-shrink-0" />
-                                      <span>{tip}</span>
-                                    </li>
-                                  ))}
-                                </ul>
+                              <div className="flex items-start gap-2">
+                                <span className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                                  advice.priority === 'high' ? 'bg-red-400' :
+                                  advice.priority === 'medium' ? 'bg-amber-400' : 'bg-green-400'
+                                }`} />
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm text-gray-900">{advice.title}</p>
+                                  <p className="text-xs text-gray-600 mt-1">{advice.description}</p>
+                                </div>
                               </div>
                             </motion.div>
-                          )}
-                        </AnimatePresence>
+                          ))}
+                        </div>
                       </motion.div>
-                    ))}
-                  </div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
-            </>
+
+              {/* 重新分析按钮 */}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setTrendResult(null);
+                  setHasAnalyzed(false);
+                  setShowCareAdvice(false);
+                }}
+                className="w-full py-2.5 px-4 border border-purple-200 text-purple-600 rounded-xl font-medium hover:bg-purple-50 transition-colors"
+              >
+                重新分析
+              </motion.button>
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <p className="text-sm text-gray-500 mb-3">分析失败，请重试</p>
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={() => {
+                  setHasAnalyzed(false);
+                  setTrendResult(null);
+                }}
+                className="px-4 py-2 bg-purple-500 text-white rounded-lg text-sm"
+              >
+                重试
+              </motion.button>
+            </div>
           )}
         </motion.div>
 

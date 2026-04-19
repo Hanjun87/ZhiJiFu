@@ -9,15 +9,7 @@ from ..core.state import SkincareState
 
 
 def compile_output_node(state: SkincareState) -> Dict[str, Any]:
-    """
-    输出组装节点 - 汇总所有结果
-
-    Args:
-        state: 当前状态
-
-    Returns:
-        包含final_output, care_advice, ai_verdict的字典
-    """
+    # 汇总所有结果，生成最终输出
     skin_profile = state.get("skin_profile", {})
     skin_metrics = state.get("skin_metrics", [])
     routine = state.get("routine", {})
@@ -54,9 +46,6 @@ def _build_care_advice(
     routine: Dict[str, Any],
     ingredient_assessment: Dict[str, Any]
 ) -> List[Dict[str, str]]:
-    """
-    构建护理建议列表
-    """
     advice_list = []
     skin_concerns = skin_profile.get("skin_concerns", [])
     recommended = routine.get("recommended_ingredients", []) if routine else []
@@ -106,9 +95,6 @@ def _build_care_advice(
 
 
 def _determine_verdict(skin_profile: Dict[str, Any], routine: Dict[str, Any]) -> str:
-    """
-    确定AI点评
-    """
     if not skin_profile:
         return "insufficient"
 

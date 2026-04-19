@@ -1,0 +1,23 @@
+{
+  "Dermatofibroma": 0,
+  "Epidermal_Cyst": 1,
+  "Other": 2,
+  "Seborrheic_Keratosis": 3,
+  "Skin_Tag": 4,
+  "Uncategorized": 5,
+  "accessory": 6,
+  "chondrodermatitis": 7,
+  "cylindroma": 8,
+  "epidermal": 9,
+  "keloids": 10,
+  "keratoacanthoma": 11,
+  "melanoma": 12,
+  "neurofibromas": 13,
+  "nevus": 14,
+  "pilar": 15,
+  "porokeratosis": 16,
+  "sebaceous": 17,
+  "seborrheic": 18,
+  "stucco": 19,
+  "syringoma": 20
+}

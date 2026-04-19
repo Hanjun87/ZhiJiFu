@@ -1,0 +1,14 @@
+{
+  "Candidiasis": 0,
+  "Other": 1,
+  "Tinea_Versicolor": 2,
+  "Uncategorized": 3,
+  "candida": 4,
+  "erosio": 5,
+  "erythrasma": 6,
+  "intertrigo": 7,
+  "kerion": 8,
+  "majocchi": 9,
+  "perleche": 10,
+  "tinea": 11
+}

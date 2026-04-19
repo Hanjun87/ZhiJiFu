@@ -1,0 +1,15 @@
+{
+  "Melasma": 0,
+  "Other": 1,
+  "Vitiligo": 2,
+  "actinic": 3,
+  "erythema": 4,
+  "idiopathic": 5,
+  "lentigo": 6,
+  "milia": 7,
+  "nevus": 8,
+  "phototoxic": 9,
+  "polymorphous": 10,
+  "porphyrias": 11,
+  "sun": 12
+}

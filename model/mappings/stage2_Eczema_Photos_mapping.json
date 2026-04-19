@@ -1,0 +1,22 @@
+{
+  "Desquamation": 0,
+  "Dyshidrosis": 1,
+  "Eczema_Acute": 2,
+  "Eczema_Areola": 3,
+  "Eczema_Chronic": 4,
+  "Eczema_Foot": 5,
+  "Eczema_Hand": 6,
+  "Eczema_Leg": 7,
+  "Eczema_Lids": 8,
+  "Eczema_Subacute": 9,
+  "Fissure": 10,
+  "Other": 11,
+  "Pompholyx": 12,
+  "Uncategorized": 13,
+  "eczema": 14,
+  "keratolysis": 15,
+  "lichen": 16,
+  "neurotic": 17,
+  "prurigo": 18,
+  "stasis": 19
+}

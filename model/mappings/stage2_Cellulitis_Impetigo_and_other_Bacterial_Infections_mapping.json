@@ -1,0 +1,12 @@
+{
+  "Carbuncle": 0,
+  "Cellulitis": 1,
+  "Folliculitis": 2,
+  "Impetigo": 3,
+  "Leprosy": 4,
+  "Other": 5,
+  "Sycosis": 6,
+  "Uncategorized": 7,
+  "atypical": 8,
+  "otitis": 9
+}

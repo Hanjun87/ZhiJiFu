@@ -1,0 +1,11 @@
+{
+  "Herpes": 0,
+  "Molluscum_Contagiosum": 1,
+  "Other": 2,
+  "Warts": 3,
+  "black": 4,
+  "corns": 5,
+  "eczema": 6,
+  "hand": 7,
+  "varicella": 8
+}

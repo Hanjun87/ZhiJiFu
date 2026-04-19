@@ -1,0 +1,13 @@
+{
+  "Hemangioma": 0,
+  "Kaposi_Sarcoma": 1,
+  "Other": 2,
+  "Pyogenic_Granuloma": 3,
+  "Venous_Lake": 4,
+  "angiokeratomas": 5,
+  "cherry": 6,
+  "lymphangioma": 7,
+  "spider": 8,
+  "telangiectasias": 9,
+  "venous": 10
+}

@@ -9,15 +9,7 @@ from ..services.rag_service import rag_service
 
 
 def rag_retrieval_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
-    """
-    调用Unified Medical RAG服务查询医学知识和相似案例
-    
-    Args:
-        state: 当前状态
-        
-    Returns:
-        更新后的状态
-    """
+    # 查询医学知识库获取相关疾病信息和相似案例
     indicators = state.get("trend_indicators") or {}
     target_disease = state.get("target_disease", "")
     user_id = state.get("user_id", "")
@@ -58,15 +50,6 @@ def rag_retrieval_node(state: DiseaseTrackingState) -> DiseaseTrackingState:
 
 
 def _determine_knowledge_type(disease_name: str) -> str:
-    """
-    根据疾病名称确定知识类型
-    
-    Args:
-        disease_name: 疾病名称
-        
-    Returns:
-        知识类型: "dermatology" | "wound" | ""
-    """
     if not disease_name:
         return ""
     
@@ -103,15 +86,6 @@ def _determine_knowledge_type(disease_name: str) -> str:
 
 
 def _build_query_text(state: DiseaseTrackingState) -> str:
-    """
-    构建RAG查询文本
-    
-    Args:
-        state: 当前状态
-        
-    Returns:
-        查询文本
-    """
     indicators = state.get("trend_indicators") or {}
     target_disease = state.get("target_disease", "")
     
@@ -151,15 +125,6 @@ def _describe_trend(severity_timeline: List[int]) -> str:
 
 
 def _analyze_trend_pattern(severity_timeline: List[int]) -> str:
-    """
-    分析趋势模式
-    
-    Args:
-        severity_timeline: 严重度时间线
-        
-    Returns:
-        趋势模式描述
-    """
     if not severity_timeline or len(severity_timeline) < 2:
         return ""
     
@@ -184,30 +149,11 @@ def _analyze_trend_pattern(severity_timeline: List[int]) -> str:
 
 
 def get_disease_knowledge_from_rag(disease_name: str) -> Dict[str, Any]:
-    """
-    从RAG获取疾病知识（便捷函数）
-    
-    Args:
-        disease_name: 疾病名称
-        
-    Returns:
-        疾病知识字典
-    """
     knowledge_type = _determine_knowledge_type(disease_name)
     return rag_service.query_disease_knowledge(disease_name, knowledge_type)
 
 
 def search_medical_knowledge(query: str, knowledge_type: str = "") -> List[Dict[str, Any]]:
-    """
-    搜索医学知识（便捷函数）
-    
-    Args:
-        query: 查询文本
-        knowledge_type: 知识类型
-        
-    Returns:
-        医学知识列表
-    """
     if not knowledge_type:
         knowledge_type = _determine_knowledge_type(query)
     

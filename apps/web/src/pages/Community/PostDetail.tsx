@@ -172,7 +172,7 @@ export const PostDetail = ({ onNavigate, backTo = 'community' }: PostDetailProps
           <div className="space-y-4">
             <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100">
               <div className="flex gap-3">
-                <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=user2" alt="" className="w-10 h-10 rounded-full" />
+                <img src="/images/保养/图片2.png" alt="" className="w-10 h-10 rounded-full" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-bold text-gray-900">苏西苏西</span>

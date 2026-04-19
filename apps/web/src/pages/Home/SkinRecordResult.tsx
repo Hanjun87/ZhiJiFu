@@ -5,9 +5,11 @@ import {
   Sparkles, Shield, Edit3, ChevronRight, Save, Plus, X
 } from 'lucide-react';
 import BackButton from '../../components/common/BackButton';
+import { SkinRecordAnalysisResult } from '../../types';
 
 interface SkinRecordResultProps {
   capturedImage: string | null;
+  analysisResult: SkinRecordAnalysisResult | null;
   onSave: () => void;
   onNavigate: (page: any) => void;
   isSaving: boolean;
@@ -22,6 +24,7 @@ interface CareItem {
 
 export default function SkinRecordResult({
   capturedImage,
+  analysisResult,
   onSave,
   onNavigate,
   isSaving,
@@ -85,17 +88,26 @@ export default function SkinRecordResult({
     minute: '2-digit'
   });
 
-  // 皮肤指标数据
-  const skinMetrics = [
-    { label: '色斑', value: 65, detail: '检测到轻度色斑，建议注意防晒并使用美白产品' },
-    { label: '黑头', value: 45, detail: 'T区有少量黑头，建议定期清洁毛孔' },
-    { label: '眼袋', value: 30, detail: '眼袋轻微，建议保证充足睡眠' },
-    { label: '黑眼圈', value: 55, detail: '黑眼圈中度，建议改善作息并使用眼霜' },
-    { label: '痘痘', value: 25, detail: '皮肤状态良好，无明显痘痘问题' },
-  ];
+  // 从API数据转换皮肤指标
+  const skinMetrics = analysisResult?.skinStatus?.issues?.map((issue, index) => ({
+    id: String(index),
+    label: issue.type,
+    value: issue.severity,
+    detail: issue.description
+  })) || [];
 
   // 选中的皮肤指标
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+
+  // 如果没有数据，显示加载状态
+  if (!analysisResult) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50 items-center justify-center">
+        <Loader2 className="animate-spin text-blue-600" size={40} />
+        <p className="mt-4 text-gray-500">正在分析中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -133,20 +145,24 @@ export default function SkinRecordResult({
 
             {/* Key Metrics Tags */}
             <div className="flex flex-wrap justify-center gap-2 mb-4">
-              {skinMetrics.map((metric) => (
-                <motion.button
-                  key={metric.label}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedMetric(selectedMetric === metric.label ? null : metric.label)}
-                  className={`px-3 py-1 text-[10px] font-bold rounded-full transition-colors ${
-                    selectedMetric === metric.label
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {metric.label}
-                </motion.button>
-              ))}
+              {skinMetrics.length > 0 ? (
+                skinMetrics.map((metric) => (
+                  <motion.button
+                    key={metric.id}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedMetric(selectedMetric === metric.label ? null : metric.label)}
+                    className={`px-3 py-1 text-[10px] font-bold rounded-full transition-colors ${
+                      selectedMetric === metric.label
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {metric.label}
+                  </motion.button>
+                ))
+              ) : (
+                <span className="text-xs text-gray-400">未检测到明显皮肤问题</span>
+              )}
             </div>
 
             {/* Selected Metric Detail */}
@@ -169,21 +185,11 @@ export default function SkinRecordResult({
               </motion.div>
             )}
 
-            {/* Radar Visualization Placeholder */}
-            <div className="relative w-full max-w-[200px] aspect-square mx-auto flex items-center justify-center mb-4">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full h-full rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center">
-                  <div className="w-3/4 h-3/4 rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center">
-                    <div className="w-1/2 h-1/2 rounded-full border-2 border-dashed border-gray-200 flex items-center justify-center">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Findings Text */}
             <p className="text-gray-500 leading-relaxed text-sm text-center">
-              今日皮肤屏障稳定，泛红现象已基本消失。
+              {analysisResult?.observations && analysisResult.observations.length > 0 
+                ? analysisResult.observations[0] 
+                : `皮肤状态${analysisResult?.skinStatus?.overall || '良好'}，${analysisResult?.skinStatus?.moisture || '水分'}含量${analysisResult?.skinStatus?.moisture === '充足' ? '充足' : '正常'}。`}
             </p>
           </div>
         </motion.section>
@@ -201,21 +207,25 @@ export default function SkinRecordResult({
             </div>
 
             <div className="space-y-3">
-              {[
-                { icon: Shield, title: '屏障修护', desc: '建议使用含神经酰胺的修护产品' },
-                { icon: Droplets, title: '保湿补水', desc: '肌肤水分含量偏低，需加强保湿' },
-                { icon: Sun, title: '严格防晒', desc: '紫外线指数较高，注意防晒保护' },
-              ].map((item, idx) => (
-                <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-2xl">
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
-                    <item.icon size={18} className="text-blue-600" />
+              {analysisResult?.suggestions && analysisResult.suggestions.length > 0 ? (
+                analysisResult.suggestions.slice(0, 3).map((suggestion, idx) => (
+                  <div key={idx} className="flex items-start gap-3 p-3 bg-gray-50 rounded-2xl">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                      {idx === 0 ? <Shield size={18} className="text-blue-600" /> : 
+                       idx === 1 ? <Droplets size={18} className="text-blue-600" /> : 
+                       <Sun size={18} className="text-blue-600" />}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-gray-900 text-sm">护理建议 {idx + 1}</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">{suggestion}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-bold text-gray-900 text-sm">{item.title}</h4>
-                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
-                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4 text-gray-400 text-sm">
+                  继续保持良好的护肤习惯
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </motion.section>
