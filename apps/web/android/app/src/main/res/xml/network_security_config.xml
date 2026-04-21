@@ -1,12 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <network-security-config>
-    <!-- 允许明文HTTP传输，用于局域网开发测试 -->
+    <!-- 基础配置：允许所有明文HTTP传输 -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+    
+    <!-- 特定域名配置 -->
     <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">192.168.43.3</domain>
+        <domain includeSubdomains="true">192.168.43.1</domain>
         <domain includeSubdomains="true">192.168.50.102</domain>
         <domain includeSubdomains="true">localhost</domain>
         <domain includeSubdomains="true">127.0.0.1</domain>
         <domain includeSubdomains="true">10.0.0.0</domain>
         <domain includeSubdomains="true">172.16.0.0</domain>
         <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">0.0.0.0</domain>
     </domain-config>
 </network-security-config>

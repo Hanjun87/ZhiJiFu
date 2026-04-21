@@ -74,10 +74,10 @@ DEFAULT_ADMIN_USERNAME = os.getenv("DEFAULT_ADMIN_USERNAME", "admin")
 DEFAULT_ADMIN_PASSWORD = os.getenv("DEFAULT_ADMIN_PASSWORD", "admin")
 DEFAULT_ADMIN_EMAIL = os.getenv("DEFAULT_ADMIN_EMAIL", "admin@skinai.local")
 
-ALLOWED_HOSTS = get_env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver")
+ALLOWED_HOSTS = get_env_list("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,testserver,192.168.43.1,192.168.43.3,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12")
 CSRF_TRUSTED_ORIGINS = get_env_list(
     "DJANGO_CSRF_TRUSTED_ORIGINS",
-    "http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:8787,http://localhost:8787,http://127.0.0.1:8788,http://localhost:8788",
+    "http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:8787,http://localhost:8787,http://127.0.0.1:8788,http://localhost:8788,http://192.168.43.1,http://192.168.43.3,capacitor://localhost",
 )
 
 INSTALLED_APPS = [
@@ -148,7 +148,7 @@ LOGOUT_REDIRECT_URL = "/login/"
 # CORS Configuration
 CORS_ALLOWED_ORIGINS = get_env_list(
     "CORS_ALLOWED_ORIGINS",
-    "http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:3001,http://localhost:3001,http://127.0.0.1:8787,http://localhost:8787,http://127.0.0.1:8788,http://localhost:8788",
+    "http://127.0.0.1:3000,http://localhost:3000,http://127.0.0.1:3001,http://localhost:3001,http://127.0.0.1:8787,http://localhost:8787,http://127.0.0.1:8788,http://localhost:8788,http://192.168.43.1,http://192.168.43.3,http://192.168.43.1:8788,http://192.168.43.3:8788,http://192.168.43.1:8790,http://192.168.43.3:8790,capacitor://localhost",
 )
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = [
